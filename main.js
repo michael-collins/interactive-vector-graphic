@@ -58,18 +58,20 @@ const showArrowInput = document.querySelector("#showArrow");
 const arrowColorInput = document.querySelector("#arrowColor");
 const arrowThicknessInput = document.querySelector("#arrowThickness");
 const arrowThicknessValue = document.querySelector("#arrowThicknessValue");
-const arrowLengthScaleInput = document.querySelector("#arrowLengthScale");
-const arrowLengthScaleValue = document.querySelector("#arrowLengthScaleValue");
+const arrowExtensionInput = document.querySelector("#arrowExtension");
+const arrowExtensionValue = document.querySelector("#arrowExtensionValue");
 const arrowHeadLengthInput = document.querySelector("#arrowHeadLength");
 const arrowHeadLengthValue = document.querySelector("#arrowHeadLengthValue");
 const arrowHeadWidthInput = document.querySelector("#arrowHeadWidth");
 const arrowHeadWidthValue = document.querySelector("#arrowHeadWidthValue");
+const arrowOpacityInput = document.querySelector("#arrowOpacity");
+const arrowOpacityValue = document.querySelector("#arrowOpacityValue");
 const showInitialArrowInput = document.querySelector("#showInitialArrow");
 const initialArrowColorInput = document.querySelector("#initialArrowColor");
 const initialArrowThicknessInput = document.querySelector("#initialArrowThickness");
 const initialArrowThicknessValue = document.querySelector("#initialArrowThicknessValue");
-const initialArrowLengthScaleInput = document.querySelector("#initialArrowLengthScale");
-const initialArrowLengthScaleValue = document.querySelector("#initialArrowLengthScaleValue");
+const initialArrowExtensionInput = document.querySelector("#initialArrowExtension");
+const initialArrowExtensionValue = document.querySelector("#initialArrowExtensionValue");
 const initialArrowHeadLengthInput = document.querySelector("#initialArrowHeadLength");
 const initialArrowHeadLengthValue = document.querySelector("#initialArrowHeadLengthValue");
 const initialArrowHeadWidthInput = document.querySelector("#initialArrowHeadWidth");
@@ -240,13 +242,14 @@ const state = {
   showArrow: toBoolean(cfg.arrow?.show, true),
   arrowColor: toColor(cfg.arrow?.color, arrowColorInput.value),
   arrowThickness: toNumber(cfg.arrow?.thickness, Number(arrowThicknessInput.value)),
-  arrowLengthScale: toNumber(cfg.arrow?.lengthScale, Number(arrowLengthScaleInput.value)),
+  arrowExtension: toNumber(cfg.arrow?.extension, Number(arrowExtensionInput.value)),
   arrowHeadLength: toNumber(cfg.arrow?.headLength, Number(arrowHeadLengthInput.value)),
   arrowHeadWidth: toNumber(cfg.arrow?.headWidth, Number(arrowHeadWidthInput.value)),
+  arrowOpacity: toNumber(cfg.arrow?.opacity, Number(arrowOpacityInput.value)),
   showInitialArrow: toBoolean(cfg.initialArrow?.show, true),
   initialArrowColor: toColor(cfg.initialArrow?.color, initialArrowColorInput.value),
   initialArrowThickness: toNumber(cfg.initialArrow?.thickness, Number(initialArrowThicknessInput.value)),
-  initialArrowLengthScale: toNumber(cfg.initialArrow?.lengthScale, Number(initialArrowLengthScaleInput.value)),
+  initialArrowExtension: toNumber(cfg.initialArrow?.extension, Number(initialArrowExtensionInput.value)),
   initialArrowHeadLength: toNumber(cfg.initialArrow?.headLength, Number(initialArrowHeadLengthInput.value)),
   initialArrowHeadWidth: toNumber(cfg.initialArrow?.headWidth, Number(initialArrowHeadWidthInput.value)),
   initialArrowOpacity: toNumber(cfg.initialArrow?.opacity, Number(initialArrowOpacityInput.value)),
@@ -801,15 +804,16 @@ function buildConfigSnapshot() {
       show: state.showArrow,
       color: `#${state.arrowColor.getHexString()}`,
       thickness: state.arrowThickness,
-      lengthScale: state.arrowLengthScale,
+      extension: state.arrowExtension,
       headLength: state.arrowHeadLength,
-      headWidth: state.arrowHeadWidth
+      headWidth: state.arrowHeadWidth,
+      opacity: state.arrowOpacity
     },
     initialArrow: {
       show: state.showInitialArrow,
       color: `#${state.initialArrowColor.getHexString()}`,
       thickness: state.initialArrowThickness,
-      lengthScale: state.initialArrowLengthScale,
+      extension: state.initialArrowExtension,
       headLength: state.initialArrowHeadLength,
       headWidth: state.initialArrowHeadWidth,
       opacity: state.initialArrowOpacity
@@ -910,20 +914,21 @@ function updateScene() {
 
   arrow.visible = state.showArrow;
   if (state.showArrow) {
-    const totalLength = currentRadius * state.arrowLengthScale;
+    const totalLength = currentRadius + state.arrowExtension;
     const shaftEnd = directionNow.clone().multiplyScalar(Math.max(0, totalLength - state.arrowHeadLength));
-    updateTubeMesh(arrowShaft, [new THREE.Vector3(), shaftEnd], state.arrowThickness, state.arrowColor, 1.0, false);
+    updateTubeMesh(arrowShaft, [new THREE.Vector3(), shaftEnd], state.arrowThickness, state.arrowColor, state.arrowOpacity, false);
     arrowShaft.material.depthTest = false;
     arrowHead.material.color.copy(state.arrowColor);
+    arrowHead.material.opacity = state.arrowOpacity;
     arrowHead.position.copy(directionNow).multiplyScalar(totalLength - state.arrowHeadLength / 2);
     arrowHead.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), directionNow);
   }
 
   const initialDirection = dirs[0] ?? baseDirection;
   const initialRadius = stageRadii[Math.max(0, maxVisibleStage - 1)] ?? 0;
-  initialArrow.visible = state.showInitialArrow;
-  if (state.showInitialArrow) {
-    const initialLength = initialRadius * state.initialArrowLengthScale;
+  initialArrow.visible = state.showInitialArrow && state.targetStage > 1;
+  if (state.showInitialArrow && state.targetStage > 1) {
+    const initialLength = initialRadius + state.initialArrowExtension;
     const shaftEnd = initialDirection.clone().multiplyScalar(Math.max(0, initialLength - state.initialArrowHeadLength));
     updateTubeMesh(initialArrowShaft, [new THREE.Vector3(), shaftEnd], state.initialArrowThickness, state.initialArrowColor, state.initialArrowOpacity, false);
     initialArrowShaft.material.depthTest = false;
@@ -1385,9 +1390,9 @@ function bindControls() {
     state.showInitialIntersection = showInitialIntersectionInput.checked;
   });
 
-  arrowLengthScaleInput.addEventListener("input", () => {
-    state.arrowLengthScale = Number(arrowLengthScaleInput.value);
-    arrowLengthScaleValue.textContent = state.arrowLengthScale.toFixed(2);
+  arrowExtensionInput.addEventListener("input", () => {
+    state.arrowExtension = Number(arrowExtensionInput.value);
+    arrowExtensionValue.textContent = state.arrowExtension.toFixed(2);
   });
 
   arrowHeadLengthInput.addEventListener("input", () => {
@@ -1404,9 +1409,15 @@ function bindControls() {
     arrowHead.geometry = new THREE.ConeGeometry(state.arrowHeadWidth, state.arrowHeadLength, 16, 1);
   });
 
-  initialArrowLengthScaleInput.addEventListener("input", () => {
-    state.initialArrowLengthScale = Number(initialArrowLengthScaleInput.value);
-    initialArrowLengthScaleValue.textContent = state.initialArrowLengthScale.toFixed(2);
+  arrowOpacityInput.addEventListener("input", () => {
+    state.arrowOpacity = Number(arrowOpacityInput.value);
+    arrowOpacityValue.textContent = state.arrowOpacity.toFixed(2);
+    updateScene();
+  });
+
+  initialArrowExtensionInput.addEventListener("input", () => {
+    state.initialArrowExtension = Number(initialArrowExtensionInput.value);
+    initialArrowExtensionValue.textContent = state.initialArrowExtension.toFixed(2);
   });
 
   initialArrowHeadLengthInput.addEventListener("input", () => {
@@ -1620,14 +1631,15 @@ function syncControlsFromState() {
   showArrowInput.checked = state.showArrow;
   arrowColorInput.value = `#${state.arrowColor.getHexString()}`;
   arrowThicknessInput.value = String(state.arrowThickness);
-  arrowLengthScaleInput.value = String(state.arrowLengthScale);
+  arrowExtensionInput.value = String(state.arrowExtension);
   arrowHeadLengthInput.value = String(state.arrowHeadLength);
   arrowHeadWidthInput.value = String(state.arrowHeadWidth);
+  arrowOpacityInput.value = String(state.arrowOpacity);
 
   showInitialArrowInput.checked = state.showInitialArrow;
   initialArrowColorInput.value = `#${state.initialArrowColor.getHexString()}`;
   initialArrowThicknessInput.value = String(state.initialArrowThickness);
-  initialArrowLengthScaleInput.value = String(state.initialArrowLengthScale);
+  initialArrowExtensionInput.value = String(state.initialArrowExtension);
   initialArrowHeadLengthInput.value = String(state.initialArrowHeadLength);
   initialArrowHeadWidthInput.value = String(state.initialArrowHeadWidth);
   initialArrowOpacityInput.value = String(state.initialArrowOpacity);
@@ -1667,11 +1679,12 @@ function setInitialOutputValues() {
   intersectionWidthValue.textContent = state.intersectionWidth.toFixed(3);
   initialIntersectionWidthValue.textContent = state.initialIntersectionWidth.toFixed(3);
   arrowThicknessValue.textContent = state.arrowThickness.toFixed(3);
-  arrowLengthScaleValue.textContent = state.arrowLengthScale.toFixed(2);
+  arrowExtensionValue.textContent = state.arrowExtension.toFixed(2);
   arrowHeadLengthValue.textContent = state.arrowHeadLength.toFixed(2);
   arrowHeadWidthValue.textContent = state.arrowHeadWidth.toFixed(2);
+  arrowOpacityValue.textContent = state.arrowOpacity.toFixed(2);
   initialArrowThicknessValue.textContent = state.initialArrowThickness.toFixed(3);
-  initialArrowLengthScaleValue.textContent = state.initialArrowLengthScale.toFixed(2);
+  initialArrowExtensionValue.textContent = state.initialArrowExtension.toFixed(2);
   initialArrowHeadLengthValue.textContent = state.initialArrowHeadLength.toFixed(2);
   initialArrowHeadWidthValue.textContent = state.initialArrowHeadWidth.toFixed(2);
   initialArrowOpacityValue.textContent = state.initialArrowOpacity.toFixed(2);

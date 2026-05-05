@@ -1,16 +1,17 @@
 {
-  "activeStage": 4,
-  "stageCount": 4,
+  "activeStage": 1,
+  "stageCount": 5,
   "stageNames": [
-    "Stage 1",
-    "Stage 2",
+    "Initial inspiration",
+    "Finding some inspiration",
     "Stage 3",
-    "Stage 4"
+    "Stage 4",
+    "Stage 5"
   ],
   "seed": 60,
   "autoApplySeed": true,
-  "coneDegrees": 35,
-  "coneRatio": 0.53,
+  "coneDegrees": 31,
+  "coneRatio": 0.58,
   "coneExtension": 0,
   "showConeHistory": true,
   "showSpheres": true,
@@ -26,15 +27,16 @@
     "#000000",
     "#949494",
     "#ffffff",
-    "#ffffff"
+    "#ffffff",
+    "#1d8cd6"
   ],
   "coneHistory": {
     "shaderMode": "flat",
     "originMode": "world",
     "angleLimiter": true,
-    "color": "#ffb454",
-    "activeOpacity": 1,
-    "inactiveOpacity": 0.22
+    "color": "#8f8f8f",
+    "activeOpacity": 0.13,
+    "inactiveOpacity": 0.6
   },
   "coneIntersection": {
     "show": true,
@@ -50,15 +52,16 @@
     "show": true,
     "color": "#000000",
     "thickness": 0.006,
-    "lengthScale": 1.3,
+    "extension": 1.2,
     "headLength": 0.25,
-    "headWidth": 0.13
+    "headWidth": 0.13,
+    "opacity": 1
   },
   "initialArrow": {
     "show": true,
     "color": "#9c9c9c",
     "thickness": 0.006,
-    "lengthScale": 1.25,
+    "extension": 1.2,
     "headLength": 0.2,
     "headWidth": 0.11,
     "opacity": 1
@@ -101,9 +104,9 @@
     "fov": 48,
     "zoom": 1.5,
     "position": {
-      "x": 7.379874235410147,
-      "y": 4.691206415034446,
-      "z": 9.392567208703827
+      "x": 3.9974628229477895,
+      "y": 4.249192981041761,
+      "z": 13.838871147845165
     }
   }
 }
