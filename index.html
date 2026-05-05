@@ -6,11 +6,263 @@
     <title>Creative Vector Refinement</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="./styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/tailwindcss">
+      /* ── Base ────────────────────────────────────── */
+      html, body { @apply h-full m-0 p-0; }
+      body { @apply bg-zinc-50 text-zinc-900 antialiased; font-family: 'Inter', system-ui, sans-serif; }
+
+      /* ── App shell grid ──────────────────────────── */
+      .app-shell {
+        min-height: 100%;
+        display: grid;
+        grid-template-rows: auto auto 1fr auto;
+        gap: 12px;
+        padding: 16px;
+      }
+
+      /* ── Stage nav buttons (JS-generated) ────────── */
+      .stage-chip { position: relative; display: inline-flex; align-items: center; }
+
+      .stage-btn {
+        @apply inline-flex items-center justify-center rounded-md border border-zinc-200 bg-white
+               text-sm font-medium text-zinc-800 shadow-sm cursor-pointer px-3 py-1.5
+               transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900 focus-visible:ring-offset-1;
+        font-family: inherit;
+      }
+      .stage-btn:hover { @apply bg-zinc-50 border-zinc-300; }
+      .stage-btn.is-active { @apply bg-zinc-900 text-white border-zinc-900; }
+      .stage-btn.is-active:hover { @apply bg-zinc-800; }
+
+      .stage-remove-btn {
+        @apply absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center
+               rounded-full bg-red-500 text-white font-bold cursor-pointer
+               opacity-0 scale-75 pointer-events-none transition-all;
+        border: none;
+        font-size: 9px;
+        line-height: 1;
+      }
+      .stage-chip.is-last:hover .stage-remove-btn,
+      .stage-chip.is-last:focus-within .stage-remove-btn {
+        @apply opacity-100 scale-100 pointer-events-auto;
+      }
+
+      .stage-add-btn {
+        @apply inline-flex items-center justify-center rounded-md border border-dashed border-zinc-300
+               bg-transparent text-sm font-medium text-zinc-400 cursor-pointer px-3 py-1.5 transition-colors;
+        font-family: inherit;
+      }
+      .stage-add-btn:hover:not(:disabled) { @apply bg-zinc-50 text-zinc-600 border-zinc-400; }
+      .stage-add-btn:disabled { @apply opacity-40 cursor-not-allowed; }
+
+      /* ── Config panel (fixed sidebar) ────────────── */
+      .config-panel {
+        position: fixed;
+        top: 14px;
+        right: 14px;
+        width: min(340px, calc(100vw - 24px));
+        max-height: calc(100vh - 28px);
+        z-index: 30;
+        overflow: hidden;
+        @apply bg-white border border-zinc-200 rounded-lg shadow-lg;
+      }
+      .config-panel > summary {
+        @apply flex items-center justify-between px-4 py-2.5 cursor-pointer
+               text-sm font-semibold text-zinc-700 bg-zinc-50 border-b border-zinc-200;
+        list-style: none;
+        user-select: none;
+      }
+      .config-panel > summary::-webkit-details-marker { display: none; }
+      .config-panel > summary::after { content: '▼'; @apply text-zinc-400 text-[10px]; }
+      .config-panel[open] > summary::after { content: '▲'; }
+
+      .config-sections {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 6px 8px 10px;
+        max-height: calc(100vh - 82px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #d4d4d8 transparent;
+      }
+      .config-sections::-webkit-scrollbar { width: 4px; }
+      .config-sections::-webkit-scrollbar-track { background: transparent; }
+      .config-sections::-webkit-scrollbar-thumb { @apply bg-zinc-300 rounded-full; }
+
+      /* ── Config group (collapsible section) ──────── */
+      .config-group { @apply rounded-md border border-zinc-100 overflow-hidden; }
+      .config-group > summary {
+        @apply flex items-center justify-between px-3 py-1.5 cursor-pointer
+               text-[10px] font-semibold uppercase tracking-wider text-zinc-400 bg-zinc-50;
+        list-style: none;
+        user-select: none;
+      }
+      .config-group > summary::-webkit-details-marker { display: none; }
+      .config-group > summary::after { content: '▼'; @apply text-zinc-300 text-[9px]; }
+      .config-group[open] > summary::after { content: '▲'; }
+
+      /* ── Config grid ─────────────────────────────── */
+      .config-grid {
+        display: grid;
+        grid-template-columns: 112px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 5px 8px;
+        padding: 8px;
+        @apply bg-white;
+      }
+      .config-grid label { @apply text-[11px] font-medium text-zinc-500 leading-tight; }
+      .config-grid span { display: block; min-height: 1px; }
+      .config-grid output {
+        @apply text-[11px] font-semibold text-zinc-800 text-right;
+        min-width: 40px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Range inputs */
+      .config-grid input[type="range"] {
+        @apply w-full cursor-pointer;
+        -webkit-appearance: none;
+        appearance: none;
+        height: 20px;
+        background: transparent;
+      }
+      .config-grid input[type="range"]::-webkit-slider-runnable-track {
+        height: 2px;
+        border-radius: 9999px;
+        @apply bg-zinc-200;
+      }
+      .config-grid input[type="range"]:focus::-webkit-slider-runnable-track { @apply bg-zinc-300; }
+      .config-grid input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid white;
+        @apply bg-zinc-900;
+        margin-top: -6px;
+        box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.14);
+      }
+      .config-grid input[type="range"]::-moz-range-track {
+        height: 2px;
+        border: 0;
+        border-radius: 9999px;
+        @apply bg-zinc-200;
+      }
+      .config-grid input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid white;
+        @apply bg-zinc-900;
+        box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.14);
+      }
+
+      /* Color, select, number inputs */
+      .config-grid input[type="color"] {
+        width: 32px;
+        height: 24px;
+        @apply rounded border border-zinc-200 p-0 bg-white cursor-pointer;
+      }
+      .config-grid select,
+      .config-grid input[type="number"] {
+        @apply w-full border border-zinc-200 rounded px-2 py-1 text-[11px] bg-white text-zinc-800 outline-none;
+        font-family: inherit;
+      }
+      .config-grid select:focus,
+      .config-grid input[type="number"]:focus {
+        @apply ring-1 ring-zinc-900 border-zinc-400;
+      }
+
+      /* Export textarea */
+      #configExport {
+        @apply w-full border border-zinc-200 rounded px-2 py-1.5 text-[11px] bg-zinc-50 text-zinc-800 outline-none resize-y;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        min-height: 72px;
+        grid-column: 1 / -1;
+      }
+      #configExport:focus { @apply ring-1 ring-zinc-900 border-zinc-400; }
+
+      /* Toggles (checkbox + label) */
+      .toggle {
+        @apply inline-flex items-center gap-2 text-[11px] font-medium text-zinc-600 cursor-pointer leading-tight;
+      }
+      .toggle input[type="checkbox"] { @apply w-3.5 h-3.5 rounded accent-zinc-900 cursor-pointer; }
+
+      /* Seed controls */
+      .seed-controls {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 6px;
+        align-items: center;
+      }
+      #seedInput {
+        @apply w-full border border-zinc-200 rounded px-2 py-1 text-[11px] bg-white text-zinc-800 outline-none;
+        font-family: inherit;
+      }
+      #seedInput:focus { @apply ring-1 ring-zinc-900 border-zinc-400; }
+
+      /* Color row (stage sphere swatches) */
+      .color-row { @apply flex gap-2 flex-wrap; }
+      #stageColorList input[type="color"] { width: 32px; height: 26px; }
+
+      /* Button row in Export group */
+      .button-row { @apply flex gap-2; grid-column: 1 / -1; }
+
+      /* Shared small config button */
+      .cfg-btn,
+      #generateSeedBtn,
+      #exportConfigBtn,
+      #copyConfigBtn,
+      #resetCameraBtn {
+        @apply inline-flex items-center justify-center rounded-md border border-zinc-200 bg-white
+               text-[11px] font-medium text-zinc-700 shadow-sm cursor-pointer px-3 py-1.5 transition-colors;
+        font-family: inherit;
+      }
+      .cfg-btn:hover:not(:disabled),
+      #generateSeedBtn:hover:not(:disabled),
+      #exportConfigBtn:hover:not(:disabled),
+      #copyConfigBtn:hover:not(:disabled),
+      #resetCameraBtn:hover:not(:disabled) { @apply bg-zinc-50 border-zinc-300; }
+      .cfg-btn:disabled,
+      #generateSeedBtn:disabled { @apply opacity-40 cursor-not-allowed; }
+      #resetCameraBtn { grid-column: 1 / 3; @apply w-full justify-center; }
+
+      /* ── Scene / canvas ──────────────────────────── */
+      .scene-wrap {
+        position: relative;
+        min-height: 460px;
+        @apply rounded-lg overflow-hidden border border-zinc-200 bg-white;
+      }
+      .scene-wrap.grid-mode canvas { @apply border border-zinc-100; }
+      .canvas-toolbar { position: absolute; top: 10px; left: 10px; z-index: 12; }
+      #scene { width: 100%; height: 100%; display: block; }
+
+      #downloadPngBtn {
+        @apply inline-flex items-center justify-center rounded-md border border-zinc-200 bg-white/90
+               text-[11px] font-medium text-zinc-600 shadow-sm cursor-pointer px-3 py-1.5 transition-colors;
+        font-family: inherit;
+        backdrop-filter: blur(4px);
+      }
+      #downloadPngBtn:hover:not(:disabled) { @apply bg-zinc-50; }
+      #downloadPngBtn:disabled { @apply opacity-50 cursor-wait; }
+
+      /* ── Legend ──────────────────────────────────── */
+      .legend { @apply flex gap-4 flex-wrap items-center text-xs text-zinc-400 pt-1; }
+      .legend .dot { @apply w-2.5 h-2.5 rounded-full inline-block mr-1; }
+      .dot-origin  { background: #fbbf24; }
+      .dot-hit     { background: #f43f5e; }
+      .dot-path    { background: #3b82f6; }
+
+      /* ── Responsive ──────────────────────────────── */
+      @media (max-width: 700px) {
+        .app-shell { padding: 10px; gap: 8px; }
+        .config-panel { position: static; width: 100%; max-height: none; }
+        .config-sections { max-height: none; }
+      }
+    </style>
     <script type="importmap">
       {
         "imports": {
@@ -22,22 +274,24 @@
   </head>
   <body>
     <div class="app-shell">
-      <header class="topbar">
-        <h1>Creative Process Vector Journey</h1>
-        <p>
+
+      <header class="bg-white border border-zinc-200 rounded-lg px-4 py-3 shadow-sm">
+        <h1 class="text-xl font-semibold tracking-tight text-zinc-900">Creative Process Vector Journey</h1>
+        <p class="text-sm text-zinc-500 mt-0.5">
           Click stages to animate sphere scale and directional evolution. Adjust the
           cone to widen or narrow possibility space.
         </p>
       </header>
 
-      <nav class="stage-bar" aria-label="Process stages">
-        <div class="stage-list"></div>
+      <nav class="flex items-center gap-2 flex-wrap px-3 py-2 bg-white border border-zinc-200 rounded-lg shadow-sm" aria-label="Process stages">
+        <div class="stage-list flex items-center gap-2 flex-wrap"></div>
         <button id="addStageBtn" class="stage-add-btn" type="button" aria-label="Add stage">+ Stage</button>
       </nav>
 
       <details class="config-panel">
         <summary>Visualization Config</summary>
         <section class="config-sections" aria-label="Visual settings">
+
           <details class="config-group" open>
             <summary>Display</summary>
             <div class="config-grid">
@@ -92,7 +346,7 @@
           </details>
 
           <details class="config-group" open>
-            <summary>Cones & Spheres</summary>
+            <summary>Cones &amp; Spheres</summary>
             <div class="config-grid">
               <label for="coneRange">Cone of Possibility</label>
               <input id="coneRange" type="range" min="1" max="89.5" value="35" step="0.5" />
@@ -110,12 +364,15 @@
                 <input id="showCones" type="checkbox" checked />
                 Show Shaded Cone History
               </label>
+              <span></span>
+              <span></span>
 
-                            <label for="coneOriginMode">Cone Origin</label>
-                            <select id="coneOriginMode">
-                              <option value="world" selected>World Origin</option>
-                              <option value="dot">Previous Dot</option>
-                            </select>
+              <label for="coneOriginMode">Cone Origin</label>
+              <select id="coneOriginMode">
+                <option value="world" selected>World Origin</option>
+                <option value="dot">Previous Dot</option>
+              </select>
+              <span></span>
 
               <label class="toggle" for="angleLimiter">
                 <input id="angleLimiter" type="checkbox" checked />
@@ -227,7 +484,7 @@
           </details>
 
           <details class="config-group" open>
-            <summary>Vector & Connectors</summary>
+            <summary>Vector &amp; Connectors</summary>
             <div class="config-grid">
               <label class="toggle" for="showArrow">
                 <input id="showArrow" type="checkbox" checked />
@@ -309,7 +566,7 @@
           </details>
 
           <details class="config-group" open>
-            <summary>Dots & Axes</summary>
+            <summary>Dots &amp; Axes</summary>
             <div class="config-grid">
               <label for="originDotColor">Origin Dot Color</label>
               <input id="originDotColor" type="color" value="#000000" />
@@ -373,7 +630,6 @@
           <details class="config-group" open>
             <summary>Export</summary>
             <div class="config-grid">
-              <label for="configExport">Config JSON</label>
               <textarea id="configExport" rows="6" readonly placeholder="Use Export Config to generate JSON"></textarea>
               <div class="button-row">
                 <button id="exportConfigBtn" type="button">Export Config</button>
@@ -381,6 +637,7 @@
               </div>
             </div>
           </details>
+
         </section>
       </details>
 
@@ -396,8 +653,8 @@
         <div><span class="dot dot-hit"></span> Stage Intersections</div>
         <div><span class="dot dot-path"></span> Connecting Path</div>
       </footer>
-    </div>
 
+    </div>
     <script type="module" src="./main.js"></script>
   </body>
 </html>
