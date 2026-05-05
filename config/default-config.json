@@ -1,0 +1,103 @@
+{
+  "stageCount": 4,
+  "stageNames": [
+    "Stage 1",
+    "Stage 2",
+    "Stage 3",
+    "Stage 4"
+  ],
+  "seed": 59,
+  "autoApplySeed": true,
+  "coneDegrees": 35,
+  "coneRatio": 0.53,
+  "coneExtension": 0,
+  "showConeHistory": true,
+  "showSpheres": true,
+  "showConnectors": true,
+  "sphereOpacity": 0.2,
+  "shaderMode": "toon",
+  "toonOutline": {
+    "show": true,
+    "color": "#292929",
+    "thickness": 0.01
+  },
+  "sphereStageColors": [
+    "#000000",
+    "#949494",
+    "#ffffff",
+    "#ffffff"
+  ],
+  "coneHistory": {
+    "shaderMode": "flat",
+    "originMode": "world",
+    "angleLimiter": true,
+    "color": "#ffb454",
+    "activeOpacity": 1,
+    "inactiveOpacity": 0.22
+  },
+  "coneIntersection": {
+    "show": true,
+    "color": "#5c5c5c",
+    "width": 0.004
+  },
+  "initialConeIntersection": {
+    "show": true,
+    "color": "#9c9c9c",
+    "width": 0.004
+  },
+  "arrow": {
+    "show": true,
+    "color": "#000000",
+    "thickness": 0.006,
+    "lengthScale": 1.4,
+    "headLength": 0.25,
+    "headWidth": 0.13
+  },
+  "initialArrow": {
+    "show": true,
+    "color": "#9c9c9c",
+    "thickness": 0.006,
+    "lengthScale": 1.1,
+    "headLength": 0.2,
+    "headWidth": 0.11,
+    "opacity": 1
+  },
+  "connectors": {
+    "color": "#000000",
+    "thickness": 0.014,
+    "opacity": 0.95
+  },
+  "dots": {
+    "originColor": "#000000",
+    "originSize": 0.075,
+    "hitColor": "#ffffff",
+    "hitSize": 0.07,
+    "outline": {
+      "show": true,
+      "color": "#1b2c3a",
+      "thickness": 0.025
+    }
+  },
+  "axes": {
+    "show": true,
+    "color": "#cfcfcf",
+    "length": 2.75,
+    "thickness": 0.015
+  },
+  "baseDirection": {
+    "azimuth": 14.5,
+    "elevation": 50
+  },
+  "fog": {
+    "show": false,
+    "density": 0.06
+  },
+  "display": {
+    "mode": "single"
+  },
+  "camera": {
+    "type": "perspective",
+    "fov": 48,
+    "zoom": 1.5
+  }
+}

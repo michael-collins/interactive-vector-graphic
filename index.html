@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Creative Vector Refinement</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <h1>Creative Process Vector Journey</h1>
+        <p>
+          Click stages to animate sphere scale and directional evolution. Adjust the
+          cone to widen or narrow possibility space.
+        </p>
+      </header>
+
+      <nav class="stage-bar" aria-label="Process stages">
+        <div class="stage-list"></div>
+        <button id="addStageBtn" class="stage-add-btn" type="button" aria-label="Add stage">+ Stage</button>
+      </nav>
+
+      <details class="config-panel" open>
+        <summary>Visualization Config</summary>
+        <section class="config-sections" aria-label="Visual settings">
+          <details class="config-group" open>
+            <summary>Display</summary>
+            <div class="config-grid">
+              <label for="displayMode">View Mode</label>
+              <select id="displayMode">
+                <option value="single" selected>Single</option>
+                <option value="grid">Grid (All Stages)</option>
+              </select>
+              <span></span>
+
+              <label for="cameraType">Camera Type</label>
+              <select id="cameraType">
+                <option value="perspective" selected>Perspective</option>
+                <option value="orthographic">Orthographic</option>
+              </select>
+              <span></span>
+
+              <label for="cameraFov">Focal Length</label>
+              <input id="cameraFov" type="range" min="12" max="120" value="48" step="1" />
+              <output id="cameraFovValue" for="cameraFov">48</output>
+
+              <label for="cameraZoom">Zoom (Ortho)</label>
+              <input id="cameraZoom" type="range" min="0.5" max="5" value="1.5" step="0.1" />
+              <output id="cameraZoomValue" for="cameraZoom">1.50</output>
+
+              <button id="resetCameraBtn" type="button" style="grid-column: 1 / 3;">Reset to 3/4 View</button>
+              <span></span>
+            </div>
+          </details>
+
+          <details class="config-group" open>
+            <summary>Flow</summary>
+            <div class="config-grid">
+              <label>Stage Count</label>
+              <span></span>
+              <output id="stageCountValue">4</output>
+
+              <label for="seedInput">Seed</label>
+              <div class="seed-controls">
+                <input id="seedInput" type="number" value="59" step="1" />
+                <button id="generateSeedBtn" type="button">Generate</button>
+              </div>
+              <span></span>
+
+              <label class="toggle" for="autoApplySeed">
+                <input id="autoApplySeed" type="checkbox" checked />
+                Auto-apply seed
+              </label>
+              <span></span>
+              <span></span>
+            </div>
+          </details>
+
+          <details class="config-group" open>
+            <summary>Cones & Spheres</summary>
+            <div class="config-grid">
+              <label for="coneRange">Cone of Possibility</label>
+              <input id="coneRange" type="range" min="1" max="89.5" value="35" step="0.5" />
+              <output id="coneValue" for="coneRange">35°</output>
+
+              <label for="coneRatio">Cone Stage Ratio</label>
+              <input id="coneRatio" type="range" min="0.5" max="1" value="0.53" step="0.01" />
+              <output id="coneRatioValue" for="coneRatio">0.53</output>
+
+              <label for="coneExtension">Cone Extension</label>
+              <input id="coneExtension" type="range" min="0" max="1.5" value="0" step="0.01" />
+              <output id="coneExtensionValue" for="coneExtension">0.00</output>
+
+              <label class="toggle" for="showCones">
+                <input id="showCones" type="checkbox" checked />
+                Show Shaded Cone History
+              </label>
+
+                            <label for="coneOriginMode">Cone Origin</label>
+                            <select id="coneOriginMode">
+                              <option value="world" selected>World Origin</option>
+                              <option value="dot">Previous Dot</option>
+                            </select>
+
+              <label class="toggle" for="angleLimiter">
+                <input id="angleLimiter" type="checkbox" checked />
+                Contain in Previous Cone
+              </label>
+              <span></span>
+              <span></span>
+
+              <label class="toggle" for="showSpheres">
+                <input id="showSpheres" type="checkbox" checked />
+                Show Spheres
+              </label>
+              <span></span>
+              <span></span>
+
+              <label for="shaderMode">Sphere Shader</label>
+              <select id="shaderMode">
+                <option value="current">Current</option>
+                <option value="flat">Flat (Unlit Solid)</option>
+                <option value="toon" selected>Toon</option>
+                <option value="matte">Matte</option>
+                <option value="wireframe">Wireframe</option>
+                <option value="normal">Normal Debug</option>
+              </select>
+              <span></span>
+
+              <label class="toggle" for="showToonOutline">
+                <input id="showToonOutline" type="checkbox" checked />
+                Toon Outlines
+              </label>
+              <label for="toonOutlineColor">Outline Color</label>
+              <input id="toonOutlineColor" type="color" value="#292929" />
+
+              <label for="toonOutlineThickness">Outline Thickness</label>
+              <input id="toonOutlineThickness" type="range" min="0.002" max="0.08" value="0.01" step="0.002" />
+              <output id="toonOutlineThicknessValue" for="toonOutlineThickness">0.010</output>
+
+              <label for="sphereOpacity">Sphere Transparency</label>
+              <input id="sphereOpacity" type="range" min="0.02" max="1" value="0.2" step="0.01" />
+              <output id="sphereOpacityValue" for="sphereOpacity">0.20</output>
+
+              <label for="sphereColor1">Stage Sphere Colors</label>
+              <div id="stageColorList" class="color-row"></div>
+              <span></span>
+
+              <label for="coneShaderMode">Cone Shader</label>
+              <select id="coneShaderMode">
+                <option value="flat" selected>Flat</option>
+                <option value="solid">Solid</option>
+                <option value="wireframe">Wireframe</option>
+              </select>
+              <span></span>
+
+              <label for="coneColor">Cone Color</label>
+              <input id="coneColor" type="color" value="#ffb454" />
+              <span></span>
+
+              <label for="coneActiveOpacity">Active Opacity</label>
+              <input id="coneActiveOpacity" type="range" min="0.02" max="1" value="1" step="0.01" />
+              <output id="coneActiveOpacityValue" for="coneActiveOpacity">1.00</output>
+
+              <label for="coneInactiveOpacity">Inactive Opacity</label>
+              <input id="coneInactiveOpacity" type="range" min="0" max="1" value="0.22" step="0.01" />
+              <output id="coneInactiveOpacityValue" for="coneInactiveOpacity">0.22</output>
+
+              <label class="toggle" for="showIntersection">
+                <input id="showIntersection" type="checkbox" checked />
+                Show Intersection Ring
+              </label>
+              <span></span>
+              <span></span>
+
+              <label for="intersectionColor">Intersection Color</label>
+              <input id="intersectionColor" type="color" value="#5c5c5c" />
+              <span></span>
+
+              <label for="intersectionWidth">Intersection Width</label>
+              <input id="intersectionWidth" type="range" min="0.004" max="0.08" value="0.004" step="0.002" />
+              <output id="intersectionWidthValue" for="intersectionWidth">0.004</output>
+
+              <label class="toggle" for="showInitialIntersection">
+                <input id="showInitialIntersection" type="checkbox" checked />
+                Show Initial Cone on Outermost Sphere
+              </label>
+              <span></span>
+              <span></span>
+
+              <label for="initialIntersectionColor">Initial Intersection Color</label>
+              <input id="initialIntersectionColor" type="color" value="#9c9c9c" />
+              <span></span>
+
+              <label for="initialIntersectionWidth">Initial Intersection Width</label>
+              <input id="initialIntersectionWidth" type="range" min="0.004" max="0.08" value="0.004" step="0.002" />
+              <output id="initialIntersectionWidthValue" for="initialIntersectionWidth">0.004</output>
+            </div>
+          </details>
+
+          <details class="config-group" open>
+            <summary>Base Direction</summary>
+            <div class="config-grid">
+              <label for="dirAzimuth">Azimuth</label>
+              <input id="dirAzimuth" type="range" min="-180" max="180" value="14.5" step="0.5" />
+              <output id="dirAzimuthValue" for="dirAzimuth">14.5°</output>
+
+              <label for="dirElevation">Elevation</label>
+              <input id="dirElevation" type="range" min="-89.5" max="89.5" value="50" step="0.5" />
+              <output id="dirElevationValue" for="dirElevation">50.0°</output>
+            </div>
+          </details>
+
+          <details class="config-group" open>
+            <summary>Vector & Connectors</summary>
+            <div class="config-grid">
+              <label class="toggle" for="showArrow">
+                <input id="showArrow" type="checkbox" checked />
+                Show Arrow
+              </label>
+              <span></span>
+              <span></span>
+
+              <label for="arrowColor">Arrow Color</label>
+              <input id="arrowColor" type="color" value="#000000" />
+              <span></span>
+
+              <label for="arrowThickness">Arrow Thickness</label>
+              <input id="arrowThickness" type="range" min="0.004" max="0.08" value="0.006" step="0.002" />
+              <output id="arrowThicknessValue" for="arrowThickness">0.006</output>
+
+              <label for="arrowLengthScale">Arrow Length Scale</label>
+              <input id="arrowLengthScale" type="range" min="0.4" max="1.8" value="1.4" step="0.05" />
+              <output id="arrowLengthScaleValue" for="arrowLengthScale">1.40</output>
+
+              <label for="arrowHeadLength">Arrow Head Length</label>
+              <input id="arrowHeadLength" type="range" min="0.08" max="0.7" value="0.25" step="0.01" />
+              <output id="arrowHeadLengthValue" for="arrowHeadLength">0.25</output>
+
+              <label for="arrowHeadWidth">Arrow Head Width</label>
+              <input id="arrowHeadWidth" type="range" min="0.05" max="0.5" value="0.13" step="0.01" />
+              <output id="arrowHeadWidthValue" for="arrowHeadWidth">0.13</output>
+
+              <label class="toggle" for="showInitialArrow">
+                <input id="showInitialArrow" type="checkbox" checked />
+                Show Initial Cone Arrow
+              </label>
+              <span></span>
+              <span></span>
+
+              <label for="initialArrowColor">Initial Arrow Color</label>
+              <input id="initialArrowColor" type="color" value="#9c9c9c" />
+              <span></span>
+
+              <label for="initialArrowThickness">Initial Arrow Thickness</label>
+              <input id="initialArrowThickness" type="range" min="0.004" max="0.08" value="0.006" step="0.002" />
+              <output id="initialArrowThicknessValue" for="initialArrowThickness">0.006</output>
+
+              <label for="initialArrowLengthScale">Initial Arrow Length Scale</label>
+              <input id="initialArrowLengthScale" type="range" min="0.4" max="1.8" value="1.1" step="0.05" />
+              <output id="initialArrowLengthScaleValue" for="initialArrowLengthScale">1.10</output>
+
+              <label for="initialArrowHeadLength">Initial Arrow Head Length</label>
+              <input id="initialArrowHeadLength" type="range" min="0.08" max="0.7" value="0.2" step="0.01" />
+              <output id="initialArrowHeadLengthValue" for="initialArrowHeadLength">0.20</output>
+
+              <label for="initialArrowHeadWidth">Initial Arrow Head Width</label>
+              <input id="initialArrowHeadWidth" type="range" min="0.05" max="0.5" value="0.11" step="0.01" />
+              <output id="initialArrowHeadWidthValue" for="initialArrowHeadWidth">0.11</output>
+
+              <label for="initialArrowOpacity">Initial Arrow Opacity</label>
+              <input id="initialArrowOpacity" type="range" min="0.05" max="1" value="1" step="0.01" />
+              <output id="initialArrowOpacityValue" for="initialArrowOpacity">1.00</output>
+
+              <label class="toggle" for="showConnectors">
+                <input id="showConnectors" type="checkbox" checked />
+                Show Connector Edges
+              </label>
+              <span></span>
+              <span></span>
+
+              <label for="connectorColor">Connector Edge Color</label>
+              <input id="connectorColor" type="color" value="#000000" />
+              <span></span>
+
+              <label for="connectorOpacity">Connector Opacity</label>
+              <input id="connectorOpacity" type="range" min="0.05" max="1" value="0.95" step="0.01" />
+              <output id="connectorOpacityValue" for="connectorOpacity">0.95</output>
+
+              <label for="connectorThickness">Connector Thickness</label>
+              <input id="connectorThickness" type="range" min="0.004" max="0.08" value="0.014" step="0.002" />
+              <output id="connectorThicknessValue" for="connectorThickness">0.014</output>
+            </div>
+          </details>
+
+          <details class="config-group" open>
+            <summary>Dots & Axes</summary>
+            <div class="config-grid">
+              <label for="originDotColor">Origin Dot Color</label>
+              <input id="originDotColor" type="color" value="#000000" />
+              <span></span>
+
+              <label for="originDotSize">Origin Dot Size</label>
+              <input id="originDotSize" type="range" min="0.02" max="0.2" value="0.075" step="0.005" />
+              <output id="originDotSizeValue" for="originDotSize">0.075</output>
+
+              <label for="hitDotColor">Hit Dot Color</label>
+              <input id="hitDotColor" type="color" value="#ffffff" />
+              <span></span>
+
+              <label for="hitDotSize">Hit Dot Size</label>
+              <input id="hitDotSize" type="range" min="0.02" max="0.2" value="0.07" step="0.005" />
+              <output id="hitDotSizeValue" for="hitDotSize">0.070</output>
+
+              <label class="toggle" for="showDotOutline">
+                <input id="showDotOutline" type="checkbox" checked />
+                Show Dot Outlines
+              </label>
+              <label for="dotOutlineColor">Dot Outline Color</label>
+              <input id="dotOutlineColor" type="color" value="#1b2c3a" />
+
+              <label for="dotOutlineThickness">Dot Outline Thickness</label>
+              <input id="dotOutlineThickness" type="range" min="0" max="0.15" value="0.025" step="0.005" />
+              <output id="dotOutlineThicknessValue" for="dotOutlineThickness">0.025</output>
+
+              <label class="toggle" for="showAxes">
+                <input id="showAxes" type="checkbox" checked />
+                Show Axis Lines
+              </label>
+              <span></span>
+              <span></span>
+
+              <label for="axisColor">Axis Color</label>
+              <input id="axisColor" type="color" value="#cfcfcf" />
+              <span></span>
+
+              <label for="axisLength">Axis Length</label>
+              <input id="axisLength" type="range" min="1" max="12" value="2.75" step="0.25" />
+              <output id="axisLengthValue" for="axisLength">2.75</output>
+
+              <label for="axisThickness">Axis Thickness</label>
+              <input id="axisThickness" type="range" min="0.003" max="0.08" value="0.015" step="0.002" />
+              <output id="axisThicknessValue" for="axisThickness">0.015</output>
+
+              <label class="toggle" for="showFog">
+                <input id="showFog" type="checkbox" />
+                Enable Fog
+              </label>
+              <span></span>
+              <span></span>
+
+              <label for="fogDensity">Fog Density</label>
+              <input id="fogDensity" type="range" min="0.005" max="0.3" value="0.06" step="0.005" />
+              <output id="fogDensityValue" for="fogDensity">0.060</output>
+            </div>
+          </details>
+
+          <details class="config-group" open>
+            <summary>Export</summary>
+            <div class="config-grid">
+              <label for="configExport">Config JSON</label>
+              <textarea id="configExport" rows="6" readonly placeholder="Use Export Config to generate JSON"></textarea>
+              <div class="button-row">
+                <button id="exportConfigBtn" type="button">Export Config</button>
+                <button id="copyConfigBtn" type="button">Copy JSON</button>
+              </div>
+            </div>
+          </details>
+        </section>
+      </details>
+
+      <main class="scene-wrap">
+        <div class="canvas-toolbar" aria-label="Canvas actions">
+          <button id="downloadPngBtn" type="button">Download PNG</button>
+        </div>
+        <canvas id="scene"></canvas>
+      </main>
+
+      <footer class="legend">
+        <div><span class="dot dot-origin"></span> Origin</div>
+        <div><span class="dot dot-hit"></span> Stage Intersections</div>
+        <div><span class="dot dot-path"></span> Connecting Path</div>
+      </footer>
+    </div>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
