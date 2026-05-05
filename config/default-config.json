@@ -6,7 +6,7 @@
     "Stage 3",
     "Stage 4"
   ],
-  "seed": 59,
+  "seed": 60,
   "autoApplySeed": true,
   "coneDegrees": 35,
   "coneRatio": 0.53,
@@ -49,7 +49,7 @@
     "show": true,
     "color": "#000000",
     "thickness": 0.006,
-    "lengthScale": 1.4,
+    "lengthScale": 1.3,
     "headLength": 0.25,
     "headWidth": 0.13
   },
@@ -57,7 +57,7 @@
     "show": true,
     "color": "#9c9c9c",
     "thickness": 0.006,
-    "lengthScale": 1.1,
+    "lengthScale": 1.25,
     "headLength": 0.2,
     "headWidth": 0.11,
     "opacity": 1
