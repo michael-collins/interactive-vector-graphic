@@ -1,4 +1,5 @@
 {
+  "activeStage": 4,
   "stageCount": 4,
   "stageNames": [
     "Stage 1",
@@ -98,6 +99,11 @@
   "camera": {
     "type": "perspective",
     "fov": 48,
-    "zoom": 1.5
+    "zoom": 1.5,
+    "position": {
+      "x": 7.379874235410147,
+      "y": 4.691206415034446,
+      "z": 9.392567208703827
+    }
   }
 }

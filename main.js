@@ -169,6 +169,19 @@ function toColor(value, fallback) {
   return new THREE.Color(typeof value === "string" ? value : fallback);
 }
 
+function readCameraPosition(value) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+  const x = Number(value.x);
+  const y = Number(value.y);
+  const z = Number(value.z);
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
+    return null;
+  }
+  return new THREE.Vector3(x, y, z);
+}
+
 async function loadDefaultConfig() {
   try {
     const res = await fetch("./config/default-config.json", { cache: "no-store" });
@@ -192,8 +205,8 @@ const state = {
   stageNames: Array.isArray(cfg.stageNames) && cfg.stageNames.length > 0
     ? cfg.stageNames.map((name, i) => String(name || `Stage ${i + 1}`))
     : ["Stage 1", "Stage 2", "Stage 3", "Stage 4"],
-  targetStage: 1,
-  animatedStage: 1,
+  targetStage: Math.max(1, Math.round(toNumber(cfg.activeStage, 1))),
+  animatedStage: Math.max(1, Math.round(toNumber(cfg.activeStage, 1))),
   coneDegrees: toNumber(cfg.coneDegrees, Number(coneRange.value)),
   coneRatio: toNumber(cfg.coneRatio, Number(coneRatioInput.value)),
   coneExtension: toNumber(cfg.coneExtension, Number(coneExtensionInput.value)),
@@ -258,6 +271,9 @@ const state = {
   cameraFov: toNumber(cfg.camera?.fov, 48),
   cameraZoom: toNumber(cfg.camera?.zoom, 1.5)
 };
+
+state.targetStage = THREE.MathUtils.clamp(state.targetStage, 1, state.stageCount);
+state.animatedStage = state.targetStage;
 
 let stageRadii = [];
 let stageOffsets = [];
@@ -744,6 +760,7 @@ function updateDotGeometry(mesh, size) {
 
 function buildConfigSnapshot() {
   return {
+    activeStage: Math.max(1, Math.round(state.targetStage)),
     stageCount: state.stageCount,
     stageNames: [...state.stageNames],
     seed: state.seedValue,
@@ -833,7 +850,12 @@ function buildConfigSnapshot() {
     camera: {
       type: state.cameraType,
       fov: state.cameraFov,
-      zoom: state.cameraZoom
+      zoom: state.cameraZoom,
+      position: {
+        x: camera.position.x,
+        y: camera.position.y,
+        z: camera.position.z
+      }
     }
   };
 }
@@ -1502,13 +1524,26 @@ function bindControls() {
       configExportArea.value = JSON.stringify(buildConfigSnapshot(), null, 2);
     }
     try {
-      await navigator.clipboard.writeText(configExportArea.value);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(configExportArea.value);
+      } else {
+        throw new Error("Clipboard API unavailable");
+      }
       copyConfigBtn.textContent = "Copied";
       setTimeout(() => {
         copyConfigBtn.textContent = "Copy JSON";
       }, 900);
     } catch {
-      copyConfigBtn.textContent = "Copy Failed";
+      // Fallback for non-secure contexts or blocked clipboard permissions.
+      configExportArea.focus();
+      configExportArea.select();
+      let copied = false;
+      try {
+        copied = document.execCommand("copy");
+      } catch {
+        copied = false;
+      }
+      copyConfigBtn.textContent = copied ? "Copied" : "Copy Failed";
       setTimeout(() => {
         copyConfigBtn.textContent = "Copy JSON";
       }, 900);
@@ -1665,6 +1700,13 @@ ensureStageNames();
 ensureStageColors();
 syncControlsFromState();
 updateBaseDirection();
+const loadedCameraPosition = readCameraPosition(cfg.camera?.position);
+if (loadedCameraPosition) {
+  perspectiveCamera.position.copy(loadedCameraPosition);
+  orthographicCamera.position.copy(loadedCameraPosition);
+}
+updateCameraType();
+controls.update();
 rebuildStageGeometry();
 rebuildAxisMeshes();
 updateAxesVisibility();
