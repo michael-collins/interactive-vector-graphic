@@ -62,7 +62,6 @@
         top: 14px;
         right: 14px;
         width: min(340px, calc(100vw - 24px));
-        max-height: calc(100vh - 28px);
         z-index: 30;
         overflow: hidden;
         @apply bg-white border border-zinc-200 rounded-lg shadow-lg;
@@ -82,17 +81,17 @@
         flex-direction: column;
         gap: 4px;
         padding: 6px 8px 10px;
-        max-height: calc(100vh - 82px);
-        overflow-y: auto;
+        max-height: calc(100vh - 90px);
+        overflow-y: scroll;
         scrollbar-width: thin;
         scrollbar-color: #d4d4d8 transparent;
       }
-      .config-sections::-webkit-scrollbar { width: 4px; }
+      .config-sections::-webkit-scrollbar { width: 5px; }
       .config-sections::-webkit-scrollbar-track { background: transparent; }
       .config-sections::-webkit-scrollbar-thumb { @apply bg-zinc-300 rounded-full; }
 
       /* ── Config group (collapsible section) ──────── */
-      .config-group { @apply rounded-md border border-zinc-100 overflow-hidden; }
+      .config-group { @apply rounded-md border border-zinc-100 overflow-hidden; flex-shrink: 0; }
       .config-group > summary {
         @apply flex items-center justify-between px-3 py-1.5 cursor-pointer
                text-[10px] font-semibold uppercase tracking-wider text-zinc-400 bg-zinc-50;
@@ -345,7 +344,7 @@
             </div>
           </details>
 
-          <details class="config-group" open>
+          <details class="config-group">
             <summary>Cones &amp; Spheres</summary>
             <div class="config-grid">
               <label for="coneRange">Cone of Possibility</label>
@@ -470,7 +469,7 @@
             </div>
           </details>
 
-          <details class="config-group" open>
+          <details class="config-group">
             <summary>Base Direction</summary>
             <div class="config-grid">
               <label for="dirAzimuth">Azimuth</label>
@@ -483,7 +482,7 @@
             </div>
           </details>
 
-          <details class="config-group" open>
+          <details class="config-group">
             <summary>Vector &amp; Connectors</summary>
             <div class="config-grid">
               <label class="toggle" for="showArrow">
@@ -565,7 +564,7 @@
             </div>
           </details>
 
-          <details class="config-group" open>
+          <details class="config-group">
             <summary>Dots &amp; Axes</summary>
             <div class="config-grid">
               <label for="originDotColor">Origin Dot Color</label>
@@ -627,7 +626,7 @@
             </div>
           </details>
 
-          <details class="config-group" open>
+          <details class="config-group">
             <summary>Export</summary>
             <div class="config-grid">
               <textarea id="configExport" rows="6" readonly placeholder="Use Export Config to generate JSON"></textarea>
