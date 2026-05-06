@@ -136,12 +136,16 @@ const gridNumberFontInput = document.querySelector("#gridNumberFont");
 const gridNumberColorInput = document.querySelector("#gridNumberColor");
 const gridNumberSizeInput = document.querySelector("#gridNumberSize");
 const gridNumberSizeValue = document.querySelector("#gridNumberSizeValue");
+const gridNumberMarginInput = document.querySelector("#gridNumberMargin");
+const gridNumberMarginValue = document.querySelector("#gridNumberMarginValue");
 const gridNumberPlacementInput = document.querySelector("#gridNumberPlacement");
 const gridLabelShowInput = document.querySelector("#gridLabelShow");
 const gridLabelFontInput = document.querySelector("#gridLabelFont");
 const gridLabelColorInput = document.querySelector("#gridLabelColor");
 const gridLabelSizeInput = document.querySelector("#gridLabelSize");
 const gridLabelSizeValue = document.querySelector("#gridLabelSizeValue");
+const gridLabelMarginInput = document.querySelector("#gridLabelMargin");
+const gridLabelMarginValue = document.querySelector("#gridLabelMarginValue");
 const gridLabelPlacementInput = document.querySelector("#gridLabelPlacement");
 const gridBorderOverlay = document.querySelector("#gridBorderOverlay");
 const gridBorderCtx = gridBorderOverlay.getContext("2d");
@@ -320,11 +324,13 @@ const state = {
   gridNumberFont: typeof cfg.display?.gridNumber?.font === "string" ? cfg.display.gridNumber.font : "Inter, system-ui, sans-serif",
   gridNumberColor: toColor(cfg.display?.gridNumber?.color, "#111827"),
   gridNumberSize: toNumber(cfg.display?.gridNumber?.size, 24),
+  gridNumberMargin: toNumber(cfg.display?.gridNumber?.margin, 6),
   gridNumberPlacement: typeof cfg.display?.gridNumber?.placement === "string" ? cfg.display.gridNumber.placement : "top-middle",
   gridLabelShow: toBoolean(cfg.display?.gridLabel?.show, false),
   gridLabelFont: typeof cfg.display?.gridLabel?.font === "string" ? cfg.display.gridLabel.font : "Inter, system-ui, sans-serif",
   gridLabelColor: toColor(cfg.display?.gridLabel?.color, "#111827"),
   gridLabelSize: toNumber(cfg.display?.gridLabel?.size, 16),
+  gridLabelMargin: toNumber(cfg.display?.gridLabel?.margin, 6),
   gridLabelPlacement: typeof cfg.display?.gridLabel?.placement === "string" ? cfg.display.gridLabel.placement : "top-middle",
   cameraType: typeof cfg.camera?.type === "string" ? cfg.camera.type : "perspective",
   cameraFov: toNumber(cfg.camera?.fov, 48),
@@ -472,6 +478,9 @@ function createSphereOutlineMaterial() {
   material.onBeforeCompile = (shader) => {
     shader.uniforms.outlineXray = { value: state.toonOutlineXray ? 1 : 0 };
     shader.uniforms.outlineDashed = { value: state.toonOutlineDashed ? 1 : 0 };
+    shader.uniforms.outlineThickness = { value: Math.max(0.001, state.toonOutlineThickness) };
+    shader.uniforms.outlineStageRadius = { value: 1 };
+    shader.uniforms.outlineReferenceRadius = { value: 1 };
     shader.uniforms.outlineDashLength = { value: Math.max(0.01, state.toonOutlineDashLength) };
     shader.uniforms.outlineDashGap = { value: Math.max(0.01, state.toonOutlineDashGap) };
     shader.uniforms.outlineDashRepeat = { value: Math.max(1, state.toonOutlineDashRepeat) };
@@ -481,21 +490,17 @@ function createSphereOutlineMaterial() {
       "#include <common>\nvarying vec3 vOutlineViewNormal;\nvarying vec3 vOutlineViewPosition;\nvarying vec2 vSphereScreenCenter;\nvarying vec2 vFragNDC;"
     );
     shader.vertexShader = shader.vertexShader.replace(
-      "#include <defaultnormal_vertex>",
-      "#include <defaultnormal_vertex>\nvOutlineViewNormal = normalize(transformedNormal);"
-    );
-    shader.vertexShader = shader.vertexShader.replace(
       "#include <project_vertex>",
-      "#include <project_vertex>\nvOutlineViewPosition = mvPosition.xyz;\nvec4 centerClip = projectionMatrix * modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0);\nvSphereScreenCenter = centerClip.xy / centerClip.w;\nvec4 fragClip = projectionMatrix * mvPosition;\nvFragNDC = fragClip.xy / fragClip.w;"
+      "#include <project_vertex>\nvOutlineViewPosition = mvPosition.xyz;\nvOutlineViewNormal = normalize(normalMatrix * position);\nvec4 centerClip = projectionMatrix * modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0);\nvSphereScreenCenter = centerClip.xy / centerClip.w;\nvec4 fragClip = projectionMatrix * mvPosition;\nvFragNDC = fragClip.xy / fragClip.w;"
     );
 
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <common>",
-      "#include <common>\n#define OUTLINE_PI 3.141592653589793\nvarying vec3 vOutlineViewNormal;\nvarying vec3 vOutlineViewPosition;\nvarying vec2 vSphereScreenCenter;\nvarying vec2 vFragNDC;\nuniform int outlineXray;\nuniform int outlineDashed;\nuniform float outlineDashLength;\nuniform float outlineDashGap;\nuniform float outlineDashRepeat;"
+      "#include <common>\n#define OUTLINE_PI 3.141592653589793\nvarying vec3 vOutlineViewNormal;\nvarying vec3 vOutlineViewPosition;\nvarying vec2 vSphereScreenCenter;\nvarying vec2 vFragNDC;\nuniform int outlineXray;\nuniform int outlineDashed;\nuniform float outlineThickness;\nuniform float outlineStageRadius;\nuniform float outlineReferenceRadius;\nuniform float outlineDashLength;\nuniform float outlineDashGap;\nuniform float outlineDashRepeat;"
     );
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <dithering_fragment>",
-      "if (outlineXray == 1) {\n  vec3 outlineViewDir = normalize(-vOutlineViewPosition);\n  float rim = 1.0 - abs(dot(normalize(vOutlineViewNormal), outlineViewDir));\n  float rimMask = smoothstep(0.35, 0.85, rim);\n  if (rimMask <= 0.001) discard;\n  diffuseColor.a *= rimMask;\n}\nif (outlineDashed == 1) {\n  vec2 dir = normalize(vFragNDC - vSphereScreenCenter);\n  float angle = atan(dir.y, dir.x);\n  float dashT = fract((angle + OUTLINE_PI) / (2.0 * OUTLINE_PI) * outlineDashRepeat);\n  float onRatio = clamp(outlineDashLength / max(0.001, outlineDashLength + outlineDashGap), 0.02, 0.98);\n  if (dashT > onRatio) discard;\n}\n#include <dithering_fragment>"
+      "if (outlineXray == 1) {\n  vec3 outlineViewDir = normalize(-vOutlineViewPosition);\n  float rim = 1.0 - abs(dot(normalize(vOutlineViewNormal), outlineViewDir));\n  float radiusComp = clamp(outlineReferenceRadius / max(outlineStageRadius, 1e-4), 0.35, 2.5);\n  float pxWidth = clamp(outlineThickness * 50.0 * radiusComp, 0.75, 10.0);\n  float pxDistFromEdge = (1.0 - rim) / max(fwidth(rim), 1e-4);\n  float rimMask = 1.0 - smoothstep(pxWidth, pxWidth + 1.0, pxDistFromEdge);\n  if (rimMask <= 0.001) discard;\n  diffuseColor.a *= rimMask;\n}\nif (outlineDashed == 1) {\n  vec2 dashDir;\n  if (outlineXray == 1) {\n    vec2 nxy = vOutlineViewNormal.xy;\n    dashDir = nxy / max(length(nxy), 1e-4);\n  } else {\n    vec2 sdir = vFragNDC - vSphereScreenCenter;\n    dashDir = sdir / max(length(sdir), 1e-4);\n  }\n  float angle = atan(dashDir.y, dashDir.x);\n  float dashT = fract((angle + OUTLINE_PI) / (2.0 * OUTLINE_PI) * outlineDashRepeat);\n  float onRatio = clamp(outlineDashLength / max(0.001, outlineDashLength + outlineDashGap), 0.02, 0.98);\n  if (dashT > onRatio) discard;\n}\n#include <dithering_fragment>"
     );
 
     material.userData.outlineShader = shader;
@@ -504,13 +509,17 @@ function createSphereOutlineMaterial() {
   return material;
 }
 
-function updateSphereOutlineMaterialProps(material) {
+function updateSphereOutlineMaterialProps(material, stageRadius = 1) {
   material.depthTest = !state.toonOutlineXray;
+  material.side = state.toonOutlineXray ? THREE.FrontSide : THREE.BackSide;
   material.color.copy(state.toonOutlineColor);
   const shader = material.userData?.outlineShader;
   if (shader?.uniforms) {
     shader.uniforms.outlineXray.value = state.toonOutlineXray ? 1 : 0;
     shader.uniforms.outlineDashed.value = state.toonOutlineDashed ? 1 : 0;
+    shader.uniforms.outlineThickness.value = Math.max(0.001, state.toonOutlineThickness);
+    shader.uniforms.outlineStageRadius.value = Math.max(0.0001, stageRadius);
+    shader.uniforms.outlineReferenceRadius.value = Math.max(0.0001, stageRadii[0] ?? stageRadius ?? 1);
     shader.uniforms.outlineDashLength.value = Math.max(0.01, state.toonOutlineDashLength);
     shader.uniforms.outlineDashGap.value = Math.max(0.01, state.toonOutlineDashGap);
     shader.uniforms.outlineDashRepeat.value = Math.max(1, state.toonOutlineDashRepeat);
@@ -975,6 +984,7 @@ function buildConfigSnapshot() {
         font: state.gridNumberFont,
         color: `#${state.gridNumberColor.getHexString()}`,
         size: state.gridNumberSize,
+        margin: state.gridNumberMargin,
         placement: state.gridNumberPlacement
       },
       gridLabel: {
@@ -982,6 +992,7 @@ function buildConfigSnapshot() {
         font: state.gridLabelFont,
         color: `#${state.gridLabelColor.getHexString()}`,
         size: state.gridLabelSize,
+        margin: state.gridLabelMargin,
         placement: state.gridLabelPlacement
       }
     },
@@ -1017,8 +1028,12 @@ function updateScene() {
     const stage = index + 1;
     const visible = state.showSpheres && stage <= maxVisibleStage && state.showToonOutline;
     outline.visible = visible;
-    outline.scale.setScalar(stageRadii[index] + state.toonOutlineThickness);
-    updateSphereOutlineMaterialProps(outline.material);
+    outline.scale.setScalar(
+      state.toonOutlineXray
+        ? stageRadii[index]
+        : stageRadii[index] + state.toonOutlineThickness
+    );
+    updateSphereOutlineMaterialProps(outline.material, stageRadii[index]);
     outline.material.opacity = stage === state.targetStage ? 1 : 0.78;
   });
 
@@ -1204,6 +1219,37 @@ function ensureOverlayCanvasSize(width, height) {
   }
 }
 
+function createRenderCameraForAspect(aspect) {
+  const safeAspect = Math.max(0.0001, aspect);
+  if (camera.isOrthographicCamera) {
+    const tempCamera = new THREE.OrthographicCamera(
+      -safeAspect * state.cameraZoom,
+      safeAspect * state.cameraZoom,
+      state.cameraZoom,
+      -state.cameraZoom,
+      camera.near,
+      camera.far
+    );
+    tempCamera.position.copy(camera.position);
+    tempCamera.quaternion.copy(camera.quaternion);
+    tempCamera.zoom = camera.zoom;
+    tempCamera.updateProjectionMatrix();
+    return tempCamera;
+  }
+
+  const tempCamera = new THREE.PerspectiveCamera(
+    camera.fov,
+    safeAspect,
+    camera.near,
+    camera.far
+  );
+  tempCamera.position.copy(camera.position);
+  tempCamera.quaternion.copy(camera.quaternion);
+  tempCamera.zoom = camera.zoom;
+  tempCamera.updateProjectionMatrix();
+  return tempCamera;
+}
+
 function parseGridAspectRatio(value) {
   if (!value || value === "free") {
     return null;
@@ -1379,14 +1425,12 @@ function clampTextToCell(ctx, text, maxWidth) {
 }
 
 function drawGridTextAnnotations(ctx, layout, textScale = 1) {
-  const stagePadding = 6;
-
   if (state.gridNumberShow) {
     ctx.fillStyle = `#${state.gridNumberColor.getHexString()}`;
     ctx.font = `${Math.max(1, state.gridNumberSize * textScale)}px ${state.gridNumberFont}`;
     for (let i = 0; i < layout.cells.length; i += 1) {
       const cell = layout.cells[i];
-      const padding = stagePadding + state.gridBorderThickness * textScale;
+      const padding = (state.gridNumberMargin + state.gridBorderThickness) * textScale;
       const pos = getPlacementPosition(cell, state.gridNumberPlacement, padding);
       ctx.textAlign = pos.textAlign;
       ctx.textBaseline = pos.textBaseline;
@@ -1400,7 +1444,7 @@ function drawGridTextAnnotations(ctx, layout, textScale = 1) {
     for (let i = 0; i < layout.cells.length; i += 1) {
       const cell = layout.cells[i];
       const label = state.stageNames[i] || `Stage ${i + 1}`;
-      const padding = stagePadding + state.gridBorderThickness * textScale;
+      const padding = (state.gridLabelMargin + state.gridBorderThickness) * textScale;
       const pos = getPlacementPosition(cell, state.gridLabelPlacement, padding);
       ctx.textAlign = pos.textAlign;
       ctx.textBaseline = pos.textBaseline;
@@ -1437,20 +1481,7 @@ function renderGridView() {
     renderer.setScissorTest(true);
 
     const cellAspect = drawWidth / Math.max(1, drawHeight);
-    const tempCamera = state.cameraType === "orthographic"
-      ? new THREE.OrthographicCamera(
-        -cellAspect * state.cameraZoom,
-        cellAspect * state.cameraZoom,
-        state.cameraZoom,
-        -state.cameraZoom,
-        0.1,
-        100
-      )
-      : new THREE.PerspectiveCamera(state.cameraFov, cellAspect, 0.1, 100);
-    tempCamera.position.copy(camera.position);
-    tempCamera.quaternion.copy(camera.quaternion);
-    tempCamera.zoom = camera.zoom;
-    tempCamera.updateProjectionMatrix();
+    const tempCamera = createRenderCameraForAspect(cellAspect);
 
     state.targetStage = i + 1;
     state.animatedStage = i + 1;
@@ -1567,19 +1598,15 @@ function downloadHiResPng(scale = 3) {
   const previousSize = new THREE.Vector2();
   renderer.getSize(previousSize);
   const previousPixelRatio = renderer.getPixelRatio();
-  const previousAspect = camera.aspect;
-
   downloadPngBtn.disabled = true;
 
   try {
     renderer.setPixelRatio(1);
     renderer.setSize(targetWidth, targetHeight, false);
-    camera.aspect = targetWidth / targetHeight;
-    camera.updateProjectionMatrix();
+    const tempCamera = createRenderCameraForAspect(targetWidth / targetHeight);
 
     updateScene();
-    controls.update();
-    renderer.render(scene, camera);
+    renderer.render(scene, tempCamera);
 
     const dataUrl = renderer.domElement.toDataURL("image/png");
     const link = document.createElement("a");
@@ -1591,8 +1618,6 @@ function downloadHiResPng(scale = 3) {
   } finally {
     renderer.setPixelRatio(previousPixelRatio);
     renderer.setSize(previousSize.x, previousSize.y, false);
-    camera.aspect = previousAspect;
-    camera.updateProjectionMatrix();
     updateScene();
     controls.update();
     renderer.render(scene, camera);
@@ -1651,18 +1676,7 @@ function downloadGridPng(scale = 3) {
       renderer.setScissorTest(true);
 
       const cellAspect = drawWidth / Math.max(1, drawHeight);
-      const tempCamera = state.cameraType === "orthographic"
-        ? new THREE.OrthographicCamera(
-            -cellAspect * state.cameraZoom,
-            cellAspect * state.cameraZoom,
-            state.cameraZoom,
-            -state.cameraZoom,
-            0.1, 100
-          )
-        : new THREE.PerspectiveCamera(state.cameraFov, cellAspect, 0.1, 100);
-      tempCamera.position.copy(camera.position);
-      tempCamera.quaternion.copy(camera.quaternion);
-      tempCamera.updateProjectionMatrix();
+      const tempCamera = createRenderCameraForAspect(cellAspect);
 
       state.targetStage = i + 1;
       state.animatedStage = i + 1;
@@ -2193,6 +2207,11 @@ function bindControls() {
     gridNumberSizeValue.textContent = String(Math.round(state.gridNumberSize));
   });
 
+  gridNumberMarginInput.addEventListener("input", () => {
+    state.gridNumberMargin = Number(gridNumberMarginInput.value);
+    gridNumberMarginValue.textContent = String(Math.round(state.gridNumberMargin));
+  });
+
   gridNumberPlacementInput.addEventListener("change", () => {
     state.gridNumberPlacement = gridNumberPlacementInput.value;
   });
@@ -2212,6 +2231,11 @@ function bindControls() {
   gridLabelSizeInput.addEventListener("input", () => {
     state.gridLabelSize = Number(gridLabelSizeInput.value);
     gridLabelSizeValue.textContent = String(Math.round(state.gridLabelSize));
+  });
+
+  gridLabelMarginInput.addEventListener("input", () => {
+    state.gridLabelMargin = Number(gridLabelMarginInput.value);
+    gridLabelMarginValue.textContent = String(Math.round(state.gridLabelMargin));
   });
 
   gridLabelPlacementInput.addEventListener("change", () => {
@@ -2257,12 +2281,16 @@ function syncControlsFromState() {
   gridNumberColorInput.value = `#${state.gridNumberColor.getHexString()}`;
   gridNumberSizeInput.value = String(state.gridNumberSize);
   gridNumberSizeValue.textContent = String(Math.round(state.gridNumberSize));
+  gridNumberMarginInput.value = String(state.gridNumberMargin);
+  gridNumberMarginValue.textContent = String(Math.round(state.gridNumberMargin));
   gridNumberPlacementInput.value = state.gridNumberPlacement;
   gridLabelShowInput.checked = state.gridLabelShow;
   gridLabelFontInput.value = state.gridLabelFont;
   gridLabelColorInput.value = `#${state.gridLabelColor.getHexString()}`;
   gridLabelSizeInput.value = String(state.gridLabelSize);
   gridLabelSizeValue.textContent = String(Math.round(state.gridLabelSize));
+  gridLabelMarginInput.value = String(state.gridLabelMargin);
+  gridLabelMarginValue.textContent = String(Math.round(state.gridLabelMargin));
   gridLabelPlacementInput.value = state.gridLabelPlacement;
   cameraTypeInput.value = state.cameraType;
   cameraFovInput.value = String(state.cameraFov);
@@ -2396,12 +2424,16 @@ function setInitialOutputValues() {
   gridNumberColorInput.value = `#${state.gridNumberColor.getHexString()}`;
   gridNumberSizeInput.value = String(state.gridNumberSize);
   gridNumberSizeValue.textContent = String(Math.round(state.gridNumberSize));
+  gridNumberMarginInput.value = String(state.gridNumberMargin);
+  gridNumberMarginValue.textContent = String(Math.round(state.gridNumberMargin));
   gridNumberPlacementInput.value = state.gridNumberPlacement;
   gridLabelShowInput.checked = state.gridLabelShow;
   gridLabelFontInput.value = state.gridLabelFont;
   gridLabelColorInput.value = `#${state.gridLabelColor.getHexString()}`;
   gridLabelSizeInput.value = String(state.gridLabelSize);
   gridLabelSizeValue.textContent = String(Math.round(state.gridLabelSize));
+  gridLabelMarginInput.value = String(state.gridLabelMargin);
+  gridLabelMarginValue.textContent = String(Math.round(state.gridLabelMargin));
   gridLabelPlacementInput.value = state.gridLabelPlacement;
   showToonOutlineInput.checked = state.showToonOutline;
   toonOutlineXrayInput.checked = state.toonOutlineXray;

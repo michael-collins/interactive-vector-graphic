@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Collins-Brill Knowledge Vector Refinement Model</title>
+    <title>Collins-Brill Vector Refinement Model</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -423,7 +423,7 @@
     <div class="app-shell">
 
       <header class="bg-white border border-zinc-200 rounded-lg px-4 py-3 shadow-sm">
-        <h1 class="text-xl font-semibold tracking-tight text-zinc-900">Collins-Brill Knowledge Vector Refinement Model</h1>
+        <h1 class="text-xl font-semibold tracking-tight text-zinc-900">Collins-Brill Vector Refinement Model</h1>
         <p class="text-sm text-zinc-500 mt-0.5">
           The beginnings of a creative artifact analysis tool.
         </p>
@@ -505,6 +505,10 @@
               <input id="gridNumberSize" type="range" min="10" max="72" value="24" step="1" />
               <output id="gridNumberSizeValue" for="gridNumberSize">24</output>
 
+              <label for="gridNumberMargin">Number Margin</label>
+              <input id="gridNumberMargin" type="range" min="0" max="40" value="6" step="1" />
+              <output id="gridNumberMarginValue" for="gridNumberMargin">6</output>
+
               <label for="gridNumberPlacement">Number Placement</label>
               <select id="gridNumberPlacement">
                 <option value="top-left">Top Left</option>
@@ -539,6 +543,10 @@
               <label for="gridLabelSize">Label Size</label>
               <input id="gridLabelSize" type="range" min="10" max="48" value="16" step="1" />
               <output id="gridLabelSizeValue" for="gridLabelSize">16</output>
+
+              <label for="gridLabelMargin">Label Margin</label>
+              <input id="gridLabelMargin" type="range" min="0" max="40" value="6" step="1" />
+              <output id="gridLabelMarginValue" for="gridLabelMargin">6</output>
 
               <label for="gridLabelPlacement">Label Placement</label>
               <select id="gridLabelPlacement">

@@ -15,34 +15,34 @@
   "showConeHistory": true,
   "showSpheres": true,
   "showConnectors": true,
-  "sphereOpacity": 0.2,
-  "shaderMode": "toon",
+  "sphereOpacity": 0.08,
+  "shaderMode": "current",
   "toonOutline": {
-    "show": false,
+    "show": true,
     "color": "#292929",
-    "thickness": 0.01,
+    "thickness": 0.018,
     "xray": false,
-    "dashed": false,
-    "dashLength": 0.5,
+    "dashed": true,
+    "dashLength": 0.95,
     "dashGap": 0.35,
-    "dashRepeat": 16
+    "dashRepeat": 41
   },
   "sphereStageColors": [
-    "#ffffff",
-    "#ffffff",
-    "#ffffff",
-    "#ffffff"
+    "#dedede",
+    "#dedede",
+    "#dedede",
+    "#dedede"
   ],
   "coneHistory": {
     "shaderMode": "flat",
     "originMode": "world",
     "angleLimiter": true,
     "color": "#8f8f8f",
-    "activeOpacity": 0.13,
-    "inactiveOpacity": 0.6
+    "activeOpacity": 1,
+    "inactiveOpacity": 0.26
   },
   "coneIntersection": {
-    "show": false,
+    "show": true,
     "color": "#5c5c5c",
     "width": 0.004
   },
@@ -113,14 +113,16 @@
       "show": true,
       "font": "Inter, system-ui, sans-serif",
       "color": "#111827",
-      "size": 15,
+      "size": 24,
+      "margin": 18,
       "placement": "top-left"
     },
     "gridLabel": {
-      "show": true,
+      "show": false,
       "font": "Inter, system-ui, sans-serif",
       "color": "#111827",
       "size": 14,
+      "margin": 9,
       "placement": "bottom-middle"
     }
   },
@@ -129,9 +131,9 @@
     "fov": 44,
     "zoom": 3.4,
     "position": {
-      "x": 4.254621122822474,
-      "y": 5.800788223527448,
-      "z": 6.840289172121069
+      "x": 4.8862554468215,
+      "y": 3.548264067440773,
+      "z": 8.026204346382428
     }
   }
 }
