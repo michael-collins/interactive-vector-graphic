@@ -33,6 +33,14 @@ const showToonOutlineInput = document.querySelector("#showToonOutline");
 const toonOutlineColorInput = document.querySelector("#toonOutlineColor");
 const toonOutlineThicknessInput = document.querySelector("#toonOutlineThickness");
 const toonOutlineThicknessValue = document.querySelector("#toonOutlineThicknessValue");
+const toonOutlineXrayInput = document.querySelector("#toonOutlineXray");
+const toonOutlineDashedInput = document.querySelector("#toonOutlineDashed");
+const toonOutlineDashLengthInput = document.querySelector("#toonOutlineDashLength");
+const toonOutlineDashLengthValue = document.querySelector("#toonOutlineDashLengthValue");
+const toonOutlineDashGapInput = document.querySelector("#toonOutlineDashGap");
+const toonOutlineDashGapValue = document.querySelector("#toonOutlineDashGapValue");
+const toonOutlineDashRepeatInput = document.querySelector("#toonOutlineDashRepeat");
+const toonOutlineDashRepeatValue = document.querySelector("#toonOutlineDashRepeatValue");
 
 const coneShaderModeInput = document.querySelector("#coneShaderMode");
 const coneColorInput = document.querySelector("#coneColor");
@@ -114,6 +122,29 @@ const copyConfigBtn = document.querySelector("#copyConfigBtn");
 const configExportArea = document.querySelector("#configExport");
 
 const displayModeInput = document.querySelector("#displayMode");
+const gridAspectRatioInput = document.querySelector("#gridAspectRatio");
+const gridBorderToggle = document.querySelector("#gridBorderToggle");
+const gridBorderColorInput = document.querySelector("#gridBorderColor");
+const gridBorderThicknessInput = document.querySelector("#gridBorderThickness");
+const gridBorderThicknessValue = document.querySelector("#gridBorderThicknessValue");
+const gridOuterMarginInput = document.querySelector("#gridOuterMargin");
+const gridOuterMarginValue = document.querySelector("#gridOuterMarginValue");
+const gridCellGapInput = document.querySelector("#gridCellGap");
+const gridCellGapValue = document.querySelector("#gridCellGapValue");
+const gridNumberShowInput = document.querySelector("#gridNumberShow");
+const gridNumberFontInput = document.querySelector("#gridNumberFont");
+const gridNumberColorInput = document.querySelector("#gridNumberColor");
+const gridNumberSizeInput = document.querySelector("#gridNumberSize");
+const gridNumberSizeValue = document.querySelector("#gridNumberSizeValue");
+const gridNumberPlacementInput = document.querySelector("#gridNumberPlacement");
+const gridLabelShowInput = document.querySelector("#gridLabelShow");
+const gridLabelFontInput = document.querySelector("#gridLabelFont");
+const gridLabelColorInput = document.querySelector("#gridLabelColor");
+const gridLabelSizeInput = document.querySelector("#gridLabelSize");
+const gridLabelSizeValue = document.querySelector("#gridLabelSizeValue");
+const gridLabelPlacementInput = document.querySelector("#gridLabelPlacement");
+const gridBorderOverlay = document.querySelector("#gridBorderOverlay");
+const gridBorderCtx = gridBorderOverlay.getContext("2d");
 const cameraTypeInput = document.querySelector("#cameraType");
 const cameraFovInput = document.querySelector("#cameraFov");
 const cameraFovValue = document.querySelector("#cameraFovValue");
@@ -121,6 +152,7 @@ const cameraZoomInput = document.querySelector("#cameraZoom");
 const cameraZoomValue = document.querySelector("#cameraZoomValue");
 const resetCameraBtn = document.querySelector("#resetCameraBtn");
 const sceneWrap = document.querySelector(".scene-wrap");
+const sceneUi = document.querySelector(".scene-ui");
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -224,6 +256,11 @@ const state = {
   showToonOutline: toBoolean(cfg.toonOutline?.show, true),
   toonOutlineColor: toColor(cfg.toonOutline?.color, toonOutlineColorInput.value),
   toonOutlineThickness: toNumber(cfg.toonOutline?.thickness, Number(toonOutlineThicknessInput.value)),
+  toonOutlineXray: toBoolean(cfg.toonOutline?.xray, false),
+  toonOutlineDashed: toBoolean(cfg.toonOutline?.dashed, false),
+  toonOutlineDashLength: toNumber(cfg.toonOutline?.dashLength, Number(toonOutlineDashLengthInput.value)),
+  toonOutlineDashGap: toNumber(cfg.toonOutline?.dashGap, Number(toonOutlineDashGapInput.value)),
+  toonOutlineDashRepeat: toNumber(cfg.toonOutline?.dashRepeat, Number(toonOutlineDashRepeatInput.value)),
   sphereOpacity: toNumber(cfg.sphereOpacity, Number(sphereOpacityInput.value)),
   sphereStageColors: Array.isArray(cfg.sphereStageColors) && cfg.sphereStageColors.length > 0
     ? cfg.sphereStageColors.map((hex) => toColor(hex, "#ffffff"))
@@ -273,6 +310,22 @@ const state = {
   showFog: toBoolean(cfg.fog?.show, false),
   fogDensity: toNumber(cfg.fog?.density, Number(fogDensityInput.value)),
   displayMode: typeof cfg.display?.mode === "string" ? cfg.display.mode : "single",
+  gridAspectRatio: typeof cfg.display?.gridAspectRatio === "string" ? cfg.display.gridAspectRatio : "free",
+  gridBorderShow: toBoolean(cfg.display?.gridBorder?.show, true),
+  gridBorderColor: toColor(cfg.display?.gridBorder?.color, "#e4e4e7"),
+  gridBorderThickness: toNumber(cfg.display?.gridBorder?.thickness, 1),
+  gridOuterMargin: toNumber(cfg.display?.gridOuterMargin, 0),
+  gridCellGap: toNumber(cfg.display?.gridCellGap, 0),
+  gridNumberShow: toBoolean(cfg.display?.gridNumber?.show, false),
+  gridNumberFont: typeof cfg.display?.gridNumber?.font === "string" ? cfg.display.gridNumber.font : "Inter, system-ui, sans-serif",
+  gridNumberColor: toColor(cfg.display?.gridNumber?.color, "#111827"),
+  gridNumberSize: toNumber(cfg.display?.gridNumber?.size, 24),
+  gridNumberPlacement: typeof cfg.display?.gridNumber?.placement === "string" ? cfg.display.gridNumber.placement : "top-middle",
+  gridLabelShow: toBoolean(cfg.display?.gridLabel?.show, false),
+  gridLabelFont: typeof cfg.display?.gridLabel?.font === "string" ? cfg.display.gridLabel.font : "Inter, system-ui, sans-serif",
+  gridLabelColor: toColor(cfg.display?.gridLabel?.color, "#111827"),
+  gridLabelSize: toNumber(cfg.display?.gridLabel?.size, 16),
+  gridLabelPlacement: typeof cfg.display?.gridLabel?.placement === "string" ? cfg.display.gridLabel.placement : "top-middle",
   cameraType: typeof cfg.camera?.type === "string" ? cfg.camera.type : "perspective",
   cameraFov: toNumber(cfg.camera?.fov, 48),
   cameraZoom: toNumber(cfg.camera?.zoom, 1.5)
@@ -403,6 +456,64 @@ function createSphereMaterial(color) {
         metalness: 0,
         clearcoat: 0.35
       });
+  }
+}
+
+function createSphereOutlineMaterial() {
+  const material = new THREE.MeshBasicMaterial({
+    color: state.toonOutlineColor,
+    side: THREE.BackSide,
+    transparent: true,
+    opacity: 0.95,
+    depthWrite: false,
+    depthTest: !state.toonOutlineXray
+  });
+
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.outlineXray = { value: state.toonOutlineXray ? 1 : 0 };
+    shader.uniforms.outlineDashed = { value: state.toonOutlineDashed ? 1 : 0 };
+    shader.uniforms.outlineDashLength = { value: Math.max(0.01, state.toonOutlineDashLength) };
+    shader.uniforms.outlineDashGap = { value: Math.max(0.01, state.toonOutlineDashGap) };
+    shader.uniforms.outlineDashRepeat = { value: Math.max(1, state.toonOutlineDashRepeat) };
+
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <common>",
+      "#include <common>\nvarying vec3 vOutlineViewNormal;\nvarying vec3 vOutlineViewPosition;\nvarying vec2 vSphereScreenCenter;\nvarying vec2 vFragNDC;"
+    );
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <defaultnormal_vertex>",
+      "#include <defaultnormal_vertex>\nvOutlineViewNormal = normalize(transformedNormal);"
+    );
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <project_vertex>",
+      "#include <project_vertex>\nvOutlineViewPosition = mvPosition.xyz;\nvec4 centerClip = projectionMatrix * modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0);\nvSphereScreenCenter = centerClip.xy / centerClip.w;\nvec4 fragClip = projectionMatrix * mvPosition;\nvFragNDC = fragClip.xy / fragClip.w;"
+    );
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <common>",
+      "#include <common>\n#define OUTLINE_PI 3.141592653589793\nvarying vec3 vOutlineViewNormal;\nvarying vec3 vOutlineViewPosition;\nvarying vec2 vSphereScreenCenter;\nvarying vec2 vFragNDC;\nuniform int outlineXray;\nuniform int outlineDashed;\nuniform float outlineDashLength;\nuniform float outlineDashGap;\nuniform float outlineDashRepeat;"
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <dithering_fragment>",
+      "if (outlineXray == 1) {\n  vec3 outlineViewDir = normalize(-vOutlineViewPosition);\n  float rim = 1.0 - abs(dot(normalize(vOutlineViewNormal), outlineViewDir));\n  float rimMask = smoothstep(0.35, 0.85, rim);\n  if (rimMask <= 0.001) discard;\n  diffuseColor.a *= rimMask;\n}\nif (outlineDashed == 1) {\n  vec2 dir = normalize(vFragNDC - vSphereScreenCenter);\n  float angle = atan(dir.y, dir.x);\n  float dashT = fract((angle + OUTLINE_PI) / (2.0 * OUTLINE_PI) * outlineDashRepeat);\n  float onRatio = clamp(outlineDashLength / max(0.001, outlineDashLength + outlineDashGap), 0.02, 0.98);\n  if (dashT > onRatio) discard;\n}\n#include <dithering_fragment>"
+    );
+
+    material.userData.outlineShader = shader;
+  };
+
+  return material;
+}
+
+function updateSphereOutlineMaterialProps(material) {
+  material.depthTest = !state.toonOutlineXray;
+  material.color.copy(state.toonOutlineColor);
+  const shader = material.userData?.outlineShader;
+  if (shader?.uniforms) {
+    shader.uniforms.outlineXray.value = state.toonOutlineXray ? 1 : 0;
+    shader.uniforms.outlineDashed.value = state.toonOutlineDashed ? 1 : 0;
+    shader.uniforms.outlineDashLength.value = Math.max(0.01, state.toonOutlineDashLength);
+    shader.uniforms.outlineDashGap.value = Math.max(0.01, state.toonOutlineDashGap);
+    shader.uniforms.outlineDashRepeat.value = Math.max(1, state.toonOutlineDashRepeat);
   }
 }
 
@@ -597,14 +708,7 @@ function rebuildStageGeometry() {
 
     const outline = new THREE.Mesh(
       sphereGeom,
-      new THREE.MeshBasicMaterial({
-        color: state.toonOutlineColor,
-        side: THREE.BackSide,
-        transparent: true,
-        opacity: 0.95,
-        depthWrite: false,
-        depthTest: true
-      })
+      createSphereOutlineMaterial()
     );
     outline.renderOrder = 7;
     scene.add(outline);
@@ -782,7 +886,12 @@ function buildConfigSnapshot() {
     toonOutline: {
       show: state.showToonOutline,
       color: `#${state.toonOutlineColor.getHexString()}`,
-      thickness: state.toonOutlineThickness
+      thickness: state.toonOutlineThickness,
+      xray: state.toonOutlineXray,
+      dashed: state.toonOutlineDashed,
+      dashLength: state.toonOutlineDashLength,
+      dashGap: state.toonOutlineDashGap,
+      dashRepeat: state.toonOutlineDashRepeat
     },
     sphereStageColors: state.sphereStageColors.map((c) => `#${c.getHexString()}`),
     coneHistory: {
@@ -852,7 +961,29 @@ function buildConfigSnapshot() {
       density: state.fogDensity
     },
     display: {
-      mode: state.displayMode
+      mode: state.displayMode,
+      gridAspectRatio: state.gridAspectRatio,
+      gridOuterMargin: state.gridOuterMargin,
+      gridCellGap: state.gridCellGap,
+      gridBorder: {
+        show: state.gridBorderShow,
+        color: `#${state.gridBorderColor.getHexString()}`,
+        thickness: state.gridBorderThickness
+      },
+      gridNumber: {
+        show: state.gridNumberShow,
+        font: state.gridNumberFont,
+        color: `#${state.gridNumberColor.getHexString()}`,
+        size: state.gridNumberSize,
+        placement: state.gridNumberPlacement
+      },
+      gridLabel: {
+        show: state.gridLabelShow,
+        font: state.gridLabelFont,
+        color: `#${state.gridLabelColor.getHexString()}`,
+        size: state.gridLabelSize,
+        placement: state.gridLabelPlacement
+      }
     },
     camera: {
       type: state.cameraType,
@@ -884,10 +1015,10 @@ function updateScene() {
 
   sphereOutlineMeshes.forEach((outline, index) => {
     const stage = index + 1;
-    const visible = state.showSpheres && stage <= maxVisibleStage && state.shaderMode === "toon" && state.showToonOutline;
+    const visible = state.showSpheres && stage <= maxVisibleStage && state.showToonOutline;
     outline.visible = visible;
-    outline.scale.setScalar(stageRadii[index] * (1 + state.toonOutlineThickness));
-    outline.material.color.copy(state.toonOutlineColor);
+    outline.scale.setScalar(stageRadii[index] + state.toonOutlineThickness);
+    updateSphereOutlineMaterialProps(outline.material);
     outline.material.opacity = stage === state.targetStage ? 1 : 0.78;
   });
 
@@ -1062,27 +1193,244 @@ function resetCameraTo3_4View() {
   controls.update();
 }
 
+function ensureOverlayCanvasSize(width, height) {
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  const pixelWidth = Math.round(width * dpr);
+  const pixelHeight = Math.round(height * dpr);
+  if (gridBorderOverlay.width !== pixelWidth || gridBorderOverlay.height !== pixelHeight) {
+    gridBorderOverlay.width = pixelWidth;
+    gridBorderOverlay.height = pixelHeight;
+    gridBorderCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+}
+
+function parseGridAspectRatio(value) {
+  if (!value || value === "free") {
+    return null;
+  }
+  const parts = value.split(":").map(Number);
+  if (parts.length !== 2 || parts.some((n) => !Number.isFinite(n) || n <= 0)) {
+    return null;
+  }
+  return parts[0] / parts[1];
+}
+
+function computeGridLayout(totalWidth, totalHeight, topInset = 0) {
+  const cols = Math.max(1, Math.ceil(Math.sqrt(state.stageCount)));
+  const rows = Math.max(1, Math.ceil(state.stageCount / cols));
+  const ratio = parseGridAspectRatio(state.gridAspectRatio);
+
+  let frameX = 0;
+  let frameY = Math.max(0, topInset);
+  let frameWidth = totalWidth;
+  let frameHeight = Math.max(1, totalHeight - frameY);
+
+  if (ratio) {
+    const frameRatio = totalWidth / Math.max(1, totalHeight);
+    if (frameRatio > ratio) {
+      frameHeight = totalHeight;
+      frameWidth = frameHeight * ratio;
+      frameX = (totalWidth - frameWidth) / 2;
+    } else {
+      frameWidth = totalWidth;
+      frameHeight = frameWidth / ratio;
+      frameY = (totalHeight - frameHeight) / 2;
+    }
+  }
+
+  const outerMargin = Math.max(0, Math.round(state.gridOuterMargin));
+  const gap = Math.max(0, Math.round(state.gridCellGap));
+
+  const usableWidth = Math.max(1, Math.floor(frameWidth - outerMargin * 2 - gap * (cols - 1)));
+  const usableHeight = Math.max(1, Math.floor(frameHeight - outerMargin * 2 - gap * (rows - 1)));
+
+  const baseCellWidth = Math.floor(usableWidth / cols);
+  const extraWidth = usableWidth - baseCellWidth * cols;
+  const baseCellHeight = Math.floor(usableHeight / rows);
+  const extraHeight = usableHeight - baseCellHeight * rows;
+
+  const colWidths = Array.from({ length: cols }, (_, i) => baseCellWidth + (i < extraWidth ? 1 : 0));
+  const rowHeights = Array.from({ length: rows }, (_, i) => baseCellHeight + (i < extraHeight ? 1 : 0));
+
+  const colStarts = [];
+  let xCursor = Math.round(frameX) + outerMargin;
+  for (let c = 0; c < cols; c += 1) {
+    colStarts.push(xCursor);
+    xCursor += colWidths[c] + gap;
+  }
+
+  const rowStarts = [];
+  let yCursor = Math.round(frameY) + outerMargin;
+  for (let r = 0; r < rows; r += 1) {
+    rowStarts.push(yCursor);
+    yCursor += rowHeights[r] + gap;
+  }
+
+  const cells = [];
+  for (let i = 0; i < state.stageCount; i += 1) {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    cells.push({
+      col,
+      row,
+      x: colStarts[col],
+      y: rowStarts[row],
+      width: colWidths[col],
+      height: rowHeights[row]
+    });
+  }
+
+  return { cols, rows, gap, cells };
+}
+
+function drawGridBorders(ctx, layout, borderThickness, borderColorHex) {
+  ctx.strokeStyle = borderColorHex;
+  ctx.lineWidth = borderThickness;
+  ctx.lineCap = layout.gap === 0 ? "square" : "butt";
+  ctx.lineJoin = "miter";
+  ctx.beginPath();
+
+  const segments = new Map();
+  const addSegment = (x1, y1, x2, y2) => {
+    const isVertical = Math.abs(x1 - x2) < 1e-6;
+    let a1 = x1;
+    let b1 = y1;
+    let a2 = x2;
+    let b2 = y2;
+
+    if (isVertical && b2 < b1) {
+      b1 = y2;
+      b2 = y1;
+    }
+    if (!isVertical && a2 < a1) {
+      a1 = x2;
+      a2 = x1;
+    }
+
+    const key = `${a1.toFixed(4)},${b1.toFixed(4)},${a2.toFixed(4)},${b2.toFixed(4)}`;
+    segments.set(key, { x1: a1, y1: b1, x2: a2, y2: b2 });
+  };
+
+  const half = borderThickness / 2;
+  const inset = layout.gap === 0 ? 0 : half;
+
+  for (const cell of layout.cells) {
+    const left = cell.x + inset;
+    const top = cell.y + inset;
+    const right = cell.x + cell.width - inset;
+    const bottom = cell.y + cell.height - inset;
+
+    if (right <= left || bottom <= top) {
+      continue;
+    }
+
+    addSegment(left, top, right, top);
+    addSegment(right, top, right, bottom);
+    addSegment(right, bottom, left, bottom);
+    addSegment(left, bottom, left, top);
+  }
+
+  for (const segment of segments.values()) {
+    ctx.moveTo(segment.x1, segment.y1);
+    ctx.lineTo(segment.x2, segment.y2);
+  }
+
+  ctx.stroke();
+}
+
+function getPlacementPosition(cell, placement, padding) {
+  const safePlacement = typeof placement === "string" ? placement : "top-middle";
+  const [vertical, horizontal] = safePlacement.split("-");
+
+  const textAlign = horizontal === "left" ? "left" : horizontal === "right" ? "right" : "center";
+  const textBaseline = vertical === "bottom" ? "bottom" : "top";
+
+  let x = cell.x + cell.width / 2;
+  if (textAlign === "left") {
+    x = cell.x + padding;
+  } else if (textAlign === "right") {
+    x = cell.x + cell.width - padding;
+  }
+
+  const y = textBaseline === "top"
+    ? cell.y + padding
+    : cell.y + cell.height - padding;
+
+  return { x, y, textAlign, textBaseline };
+}
+
+function clampTextToCell(ctx, text, maxWidth) {
+  if (ctx.measureText(text).width <= maxWidth) {
+    return text;
+  }
+  const ellipsis = "...";
+  let lo = 0;
+  let hi = text.length;
+  while (lo < hi) {
+    const mid = Math.floor((lo + hi + 1) / 2);
+    const candidate = `${text.slice(0, mid)}${ellipsis}`;
+    if (ctx.measureText(candidate).width <= maxWidth) {
+      lo = mid;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return `${text.slice(0, lo)}${ellipsis}`;
+}
+
+function drawGridTextAnnotations(ctx, layout, textScale = 1) {
+  const stagePadding = 6;
+
+  if (state.gridNumberShow) {
+    ctx.fillStyle = `#${state.gridNumberColor.getHexString()}`;
+    ctx.font = `${Math.max(1, state.gridNumberSize * textScale)}px ${state.gridNumberFont}`;
+    for (let i = 0; i < layout.cells.length; i += 1) {
+      const cell = layout.cells[i];
+      const padding = stagePadding + state.gridBorderThickness * textScale;
+      const pos = getPlacementPosition(cell, state.gridNumberPlacement, padding);
+      ctx.textAlign = pos.textAlign;
+      ctx.textBaseline = pos.textBaseline;
+      ctx.fillText(String(i + 1), pos.x, pos.y);
+    }
+  }
+
+  if (state.gridLabelShow) {
+    ctx.fillStyle = `#${state.gridLabelColor.getHexString()}`;
+    ctx.font = `${Math.max(1, state.gridLabelSize * textScale)}px ${state.gridLabelFont}`;
+    for (let i = 0; i < layout.cells.length; i += 1) {
+      const cell = layout.cells[i];
+      const label = state.stageNames[i] || `Stage ${i + 1}`;
+      const padding = stagePadding + state.gridBorderThickness * textScale;
+      const pos = getPlacementPosition(cell, state.gridLabelPlacement, padding);
+      ctx.textAlign = pos.textAlign;
+      ctx.textBaseline = pos.textBaseline;
+
+      const maxWidth = Math.max(8, cell.width - padding * 2);
+      const renderedText = clampTextToCell(ctx, String(label), maxWidth);
+      ctx.fillText(renderedText, pos.x, pos.y, maxWidth);
+    }
+  }
+}
+
 function renderGridView() {
   const width = Math.max(1, canvas.clientWidth);
   const height = Math.max(1, canvas.clientHeight);
-  const cols = Math.ceil(Math.sqrt(state.stageCount));
-  const rows = Math.ceil(state.stageCount / cols);
-  const cellWidth = Math.floor(width / cols);
-  const cellHeight = Math.floor(height / rows);
+  const wrapRect = sceneWrap.getBoundingClientRect();
+  const uiRect = sceneUi.getBoundingClientRect();
+  const topInset = Math.max(0, Math.round(uiRect.bottom - wrapRect.top + 8));
+  const layout = computeGridLayout(width, height, topInset);
 
   renderer.setClearColor(0xffffff);
 
   const savedTargetStage = state.targetStage;
   const savedAnimatedStage = state.animatedStage;
 
-  for (let i = 0; i < state.stageCount; i += 1) {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const x = col * cellWidth;
-    const y = height - (row + 1) * cellHeight;
-
-    const drawWidth = col === cols - 1 ? width - x : cellWidth;
-    const drawHeight = row === rows - 1 ? height - (row * cellHeight) : cellHeight;
+  for (let i = 0; i < layout.cells.length; i += 1) {
+    const cell = layout.cells[i];
+    const drawWidth = Math.max(1, cell.width);
+    const drawHeight = Math.max(1, cell.height);
+    const x = Math.round(cell.x);
+    const y = Math.round(height - (cell.y + cell.height));
 
     renderer.setViewport(x, y, drawWidth, drawHeight);
     renderer.setScissor(x, y, drawWidth, drawHeight);
@@ -1101,6 +1449,7 @@ function renderGridView() {
       : new THREE.PerspectiveCamera(state.cameraFov, cellAspect, 0.1, 100);
     tempCamera.position.copy(camera.position);
     tempCamera.quaternion.copy(camera.quaternion);
+    tempCamera.zoom = camera.zoom;
     tempCamera.updateProjectionMatrix();
 
     state.targetStage = i + 1;
@@ -1116,6 +1465,52 @@ function renderGridView() {
 
   renderer.setScissorTest(false);
   renderer.setViewport(0, 0, width, height);
+
+  // Draw grid borders on the 2D overlay canvas.
+  ensureOverlayCanvasSize(width, height);
+  gridBorderCtx.clearRect(0, 0, width, height);
+  if (state.gridBorderShow && state.stageCount > 0) {
+    drawGridBorders(
+      gridBorderCtx,
+      layout,
+      state.gridBorderThickness,
+      `#${state.gridBorderColor.getHexString()}`
+    );
+  }
+
+  if ((state.gridNumberShow || state.gridLabelShow) && state.stageCount > 0) {
+    drawGridTextAnnotations(gridBorderCtx, layout, 1);
+  }
+}
+
+function updateSceneWrapHeightForGridMode() {
+  if (state.displayMode !== "grid") {
+    if (sceneWrap.style.height) {
+      sceneWrap.style.removeProperty("height");
+    }
+    return;
+  }
+
+  const width = Math.max(1, sceneWrap.clientWidth);
+  const cols = Math.max(1, Math.ceil(Math.sqrt(state.stageCount)));
+  const rows = Math.max(1, Math.ceil(state.stageCount / cols));
+  const targetRatio = parseGridAspectRatio(state.gridAspectRatio) ?? (cols / rows);
+  const wrapRect = sceneWrap.getBoundingClientRect();
+  const uiRect = sceneUi.getBoundingClientRect();
+  const topInset = Math.max(0, Math.round(uiRect.bottom - wrapRect.top + 8));
+  const isNarrowViewport = window.matchMedia("(max-width: 700px)").matches;
+  const baseMinHeight = isNarrowViewport ? 360 : 420;
+  const minCellHeight = isNarrowViewport ? 140 : 190;
+  const gap = Math.max(0, Math.round(state.gridCellGap));
+  const outerMargin = Math.max(0, Math.round(state.gridOuterMargin));
+  const desiredGridHeight = Math.ceil(width / Math.max(0.01, targetRatio));
+  const minRowsHeight = rows * minCellHeight + gap * Math.max(0, rows - 1) + outerMargin * 2;
+  const desiredHeight = Math.max(baseMinHeight, topInset + desiredGridHeight, topInset + minRowsHeight);
+
+  const currentInlineHeight = Number.parseFloat(sceneWrap.style.height);
+  if (!Number.isFinite(currentInlineHeight) || Math.abs(currentInlineHeight - desiredHeight) > 1) {
+    sceneWrap.style.height = `${desiredHeight}px`;
+  }
 }
 
 function animate() {
@@ -1133,6 +1528,8 @@ function animate() {
 }
 
 function onResize() {
+  updateSceneWrapHeightForGridMode();
+
   const width = sceneWrap.clientWidth;
   const height = sceneWrap.clientHeight;
   if (width <= 0 || height <= 0) {
@@ -1203,6 +1600,119 @@ function downloadHiResPng(scale = 3) {
   }
 }
 
+function downloadGridPng(scale = 3) {
+  const parent = canvas.parentElement;
+  const parentWidth = Math.max(1, parent.clientWidth);
+  const parentHeight = Math.max(1, parent.clientHeight);
+
+  let targetWidth, targetHeight;
+  const ratio = state.gridAspectRatio;
+  if (ratio === "free") {
+    targetWidth = Math.round(parentWidth * scale);
+    targetHeight = Math.round(parentHeight * scale);
+  } else {
+    const [rw, rh] = ratio.split(":").map(Number);
+    const baseWidth = parentWidth * scale;
+    const baseHeight = parentHeight * scale;
+    if (baseWidth / baseHeight > rw / rh) {
+      targetHeight = Math.round(baseHeight);
+      targetWidth = Math.round(targetHeight * (rw / rh));
+    } else {
+      targetWidth = Math.round(baseWidth);
+      targetHeight = Math.round(targetWidth * (rh / rw));
+    }
+  }
+
+  const previousSize = new THREE.Vector2();
+  renderer.getSize(previousSize);
+  const previousPixelRatio = renderer.getPixelRatio();
+
+  downloadPngBtn.disabled = true;
+
+  try {
+    renderer.setPixelRatio(1);
+    renderer.setSize(targetWidth, targetHeight, false);
+    renderer.setClearColor(0xffffff);
+
+    const layout = computeGridLayout(targetWidth, targetHeight, 0);
+
+    const savedTargetStage = state.targetStage;
+    const savedAnimatedStage = state.animatedStage;
+
+    for (let i = 0; i < layout.cells.length; i += 1) {
+      const cell = layout.cells[i];
+      const x = Math.round(cell.x);
+      const y = Math.round(targetHeight - (cell.y + cell.height));
+      const drawWidth = Math.max(1, cell.width);
+      const drawHeight = Math.max(1, cell.height);
+
+      renderer.setViewport(x, y, drawWidth, drawHeight);
+      renderer.setScissor(x, y, drawWidth, drawHeight);
+      renderer.setScissorTest(true);
+
+      const cellAspect = drawWidth / Math.max(1, drawHeight);
+      const tempCamera = state.cameraType === "orthographic"
+        ? new THREE.OrthographicCamera(
+            -cellAspect * state.cameraZoom,
+            cellAspect * state.cameraZoom,
+            state.cameraZoom,
+            -state.cameraZoom,
+            0.1, 100
+          )
+        : new THREE.PerspectiveCamera(state.cameraFov, cellAspect, 0.1, 100);
+      tempCamera.position.copy(camera.position);
+      tempCamera.quaternion.copy(camera.quaternion);
+      tempCamera.updateProjectionMatrix();
+
+      state.targetStage = i + 1;
+      state.animatedStage = i + 1;
+      updateScene();
+      renderer.render(scene, tempCamera);
+    }
+
+    state.targetStage = savedTargetStage;
+    state.animatedStage = savedAnimatedStage;
+    updateScene();
+    renderer.setScissorTest(false);
+    renderer.setViewport(0, 0, targetWidth, targetHeight);
+
+    // Composite borders onto an offscreen 2D canvas
+    const offscreen = document.createElement("canvas");
+    offscreen.width = targetWidth;
+    offscreen.height = targetHeight;
+    const ctx = offscreen.getContext("2d");
+    ctx.drawImage(renderer.domElement, 0, 0);
+
+    if (state.gridBorderShow && state.stageCount > 0) {
+      drawGridBorders(
+        ctx,
+        layout,
+        state.gridBorderThickness * scale,
+        `#${state.gridBorderColor.getHexString()}`
+      );
+    }
+
+    if ((state.gridNumberShow || state.gridLabelShow) && state.stageCount > 0) {
+      drawGridTextAnnotations(ctx, layout, scale);
+    }
+
+    const dataUrl = offscreen.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.href = dataUrl;
+    link.download = `creative-process-grid-${timestampForFilename()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } finally {
+    renderer.setPixelRatio(previousPixelRatio);
+    renderer.setSize(previousSize.x, previousSize.y, false);
+    updateScene();
+    controls.update();
+    renderer.render(scene, camera);
+    downloadPngBtn.disabled = false;
+  }
+}
+
 function bindControls() {
   const setConfigPanelOpen = (isOpen) => {
     configPanel.classList.toggle("is-open", isOpen);
@@ -1237,7 +1747,11 @@ function bindControls() {
   });
 
   downloadPngBtn.addEventListener("click", () => {
-    downloadHiResPng(3);
+    if (state.displayMode === "grid") {
+      downloadGridPng(3);
+    } else {
+      downloadHiResPng(3);
+    }
   });
 
   coneRange.addEventListener("input", () => {
@@ -1355,6 +1869,14 @@ function bindControls() {
     state.showToonOutline = showToonOutlineInput.checked;
   });
 
+  toonOutlineXrayInput.addEventListener("change", () => {
+    state.toonOutlineXray = toonOutlineXrayInput.checked;
+  });
+
+  toonOutlineDashedInput.addEventListener("change", () => {
+    state.toonOutlineDashed = toonOutlineDashedInput.checked;
+  });
+
   toonOutlineColorInput.addEventListener("input", () => {
     state.toonOutlineColor = new THREE.Color(toonOutlineColorInput.value);
   });
@@ -1362,6 +1884,21 @@ function bindControls() {
   toonOutlineThicknessInput.addEventListener("input", () => {
     state.toonOutlineThickness = Number(toonOutlineThicknessInput.value);
     toonOutlineThicknessValue.textContent = state.toonOutlineThickness.toFixed(3);
+  });
+
+  toonOutlineDashLengthInput.addEventListener("input", () => {
+    state.toonOutlineDashLength = Number(toonOutlineDashLengthInput.value);
+    toonOutlineDashLengthValue.textContent = state.toonOutlineDashLength.toFixed(2);
+  });
+
+  toonOutlineDashGapInput.addEventListener("input", () => {
+    state.toonOutlineDashGap = Number(toonOutlineDashGapInput.value);
+    toonOutlineDashGapValue.textContent = state.toonOutlineDashGap.toFixed(2);
+  });
+
+  toonOutlineDashRepeatInput.addEventListener("input", () => {
+    state.toonOutlineDashRepeat = Number(toonOutlineDashRepeatInput.value);
+    toonOutlineDashRepeatValue.textContent = String(Math.round(state.toonOutlineDashRepeat));
   });
 
   intersectionColorInput.addEventListener("input", () => {
@@ -1602,7 +2139,83 @@ function bindControls() {
   displayModeInput.addEventListener("change", () => {
     state.displayMode = displayModeInput.value;
     sceneWrap.classList.toggle("grid-mode", state.displayMode === "grid");
+    updateSceneWrapHeightForGridMode();
     controls.enabled = true;
+    if (state.displayMode !== "grid") {
+      gridBorderCtx.clearRect(0, 0, gridBorderOverlay.width, gridBorderOverlay.height);
+    }
+  });
+
+  gridAspectRatioInput.addEventListener("change", () => {
+    state.gridAspectRatio = gridAspectRatioInput.value;
+    updateSceneWrapHeightForGridMode();
+  });
+
+  gridBorderToggle.addEventListener("change", () => {
+    state.gridBorderShow = gridBorderToggle.checked;
+  });
+
+  gridBorderColorInput.addEventListener("input", () => {
+    state.gridBorderColor.set(gridBorderColorInput.value);
+  });
+
+  gridBorderThicknessInput.addEventListener("input", () => {
+    state.gridBorderThickness = Number(gridBorderThicknessInput.value);
+    gridBorderThicknessValue.textContent = state.gridBorderThickness.toFixed(1);
+  });
+
+  gridOuterMarginInput.addEventListener("input", () => {
+    state.gridOuterMargin = Number(gridOuterMarginInput.value);
+    gridOuterMarginValue.textContent = String(Math.round(state.gridOuterMargin));
+    updateSceneWrapHeightForGridMode();
+  });
+
+  gridCellGapInput.addEventListener("input", () => {
+    state.gridCellGap = Number(gridCellGapInput.value);
+    gridCellGapValue.textContent = String(Math.round(state.gridCellGap));
+    updateSceneWrapHeightForGridMode();
+  });
+
+  gridNumberShowInput.addEventListener("change", () => {
+    state.gridNumberShow = gridNumberShowInput.checked;
+  });
+
+  gridNumberFontInput.addEventListener("change", () => {
+    state.gridNumberFont = gridNumberFontInput.value;
+  });
+
+  gridNumberColorInput.addEventListener("input", () => {
+    state.gridNumberColor.set(gridNumberColorInput.value);
+  });
+
+  gridNumberSizeInput.addEventListener("input", () => {
+    state.gridNumberSize = Number(gridNumberSizeInput.value);
+    gridNumberSizeValue.textContent = String(Math.round(state.gridNumberSize));
+  });
+
+  gridNumberPlacementInput.addEventListener("change", () => {
+    state.gridNumberPlacement = gridNumberPlacementInput.value;
+  });
+
+  gridLabelShowInput.addEventListener("change", () => {
+    state.gridLabelShow = gridLabelShowInput.checked;
+  });
+
+  gridLabelFontInput.addEventListener("change", () => {
+    state.gridLabelFont = gridLabelFontInput.value;
+  });
+
+  gridLabelColorInput.addEventListener("input", () => {
+    state.gridLabelColor.set(gridLabelColorInput.value);
+  });
+
+  gridLabelSizeInput.addEventListener("input", () => {
+    state.gridLabelSize = Number(gridLabelSizeInput.value);
+    gridLabelSizeValue.textContent = String(Math.round(state.gridLabelSize));
+  });
+
+  gridLabelPlacementInput.addEventListener("change", () => {
+    state.gridLabelPlacement = gridLabelPlacementInput.value;
   });
 
   cameraTypeInput.addEventListener("change", () => {
@@ -1631,6 +2244,26 @@ function bindControls() {
 
 function syncControlsFromState() {
   displayModeInput.value = state.displayMode;
+  gridAspectRatioInput.value = state.gridAspectRatio;
+  gridBorderToggle.checked = state.gridBorderShow;
+  gridBorderColorInput.value = `#${state.gridBorderColor.getHexString()}`;
+  gridBorderThicknessInput.value = String(state.gridBorderThickness);
+  gridOuterMarginInput.value = String(state.gridOuterMargin);
+  gridOuterMarginValue.textContent = String(Math.round(state.gridOuterMargin));
+  gridCellGapInput.value = String(state.gridCellGap);
+  gridCellGapValue.textContent = String(Math.round(state.gridCellGap));
+  gridNumberShowInput.checked = state.gridNumberShow;
+  gridNumberFontInput.value = state.gridNumberFont;
+  gridNumberColorInput.value = `#${state.gridNumberColor.getHexString()}`;
+  gridNumberSizeInput.value = String(state.gridNumberSize);
+  gridNumberSizeValue.textContent = String(Math.round(state.gridNumberSize));
+  gridNumberPlacementInput.value = state.gridNumberPlacement;
+  gridLabelShowInput.checked = state.gridLabelShow;
+  gridLabelFontInput.value = state.gridLabelFont;
+  gridLabelColorInput.value = `#${state.gridLabelColor.getHexString()}`;
+  gridLabelSizeInput.value = String(state.gridLabelSize);
+  gridLabelSizeValue.textContent = String(Math.round(state.gridLabelSize));
+  gridLabelPlacementInput.value = state.gridLabelPlacement;
   cameraTypeInput.value = state.cameraType;
   cameraFovInput.value = String(state.cameraFov);
   cameraZoomInput.value = String(state.cameraZoom);
@@ -1648,8 +2281,16 @@ function syncControlsFromState() {
   shaderModeInput.value = state.shaderMode;
   sphereOpacityInput.value = String(state.sphereOpacity);
   showToonOutlineInput.checked = state.showToonOutline;
+  toonOutlineXrayInput.checked = state.toonOutlineXray;
+  toonOutlineDashedInput.checked = state.toonOutlineDashed;
   toonOutlineColorInput.value = `#${state.toonOutlineColor.getHexString()}`;
   toonOutlineThicknessInput.value = String(state.toonOutlineThickness);
+  toonOutlineDashLengthInput.value = String(state.toonOutlineDashLength);
+  toonOutlineDashLengthValue.textContent = state.toonOutlineDashLength.toFixed(2);
+  toonOutlineDashGapInput.value = String(state.toonOutlineDashGap);
+  toonOutlineDashGapValue.textContent = state.toonOutlineDashGap.toFixed(2);
+  toonOutlineDashRepeatInput.value = String(state.toonOutlineDashRepeat);
+  toonOutlineDashRepeatValue.textContent = String(Math.round(state.toonOutlineDashRepeat));
 
   coneShaderModeInput.value = state.coneShaderMode;
   coneColorInput.value = `#${state.coneColor.getHexString()}`;
@@ -1712,6 +2353,9 @@ function setInitialOutputValues() {
   coneExtensionValue.textContent = state.coneExtension.toFixed(2);
   sphereOpacityValue.textContent = state.sphereOpacity.toFixed(2);
   toonOutlineThicknessValue.textContent = state.toonOutlineThickness.toFixed(3);
+  toonOutlineDashLengthValue.textContent = state.toonOutlineDashLength.toFixed(2);
+  toonOutlineDashGapValue.textContent = state.toonOutlineDashGap.toFixed(2);
+  toonOutlineDashRepeatValue.textContent = String(Math.round(state.toonOutlineDashRepeat));
   coneActiveOpacityValue.textContent = state.coneActiveOpacity.toFixed(2);
   coneInactiveOpacityValue.textContent = state.coneInactiveOpacity.toFixed(2);
   intersectionWidthValue.textContent = state.intersectionWidth.toFixed(3);
@@ -1738,6 +2382,33 @@ function setInitialOutputValues() {
   fogDensityValue.textContent = state.fogDensity.toFixed(3);
   stageCountValue.textContent = String(state.stageCount);
   displayModeInput.value = state.displayMode;
+  gridAspectRatioInput.value = state.gridAspectRatio;
+  gridBorderToggle.checked = state.gridBorderShow;
+  gridBorderColorInput.value = `#${state.gridBorderColor.getHexString()}`;
+  gridBorderThicknessInput.value = String(state.gridBorderThickness);
+  gridBorderThicknessValue.textContent = state.gridBorderThickness.toFixed(1);
+  gridOuterMarginInput.value = String(state.gridOuterMargin);
+  gridOuterMarginValue.textContent = String(Math.round(state.gridOuterMargin));
+  gridCellGapInput.value = String(state.gridCellGap);
+  gridCellGapValue.textContent = String(Math.round(state.gridCellGap));
+  gridNumberShowInput.checked = state.gridNumberShow;
+  gridNumberFontInput.value = state.gridNumberFont;
+  gridNumberColorInput.value = `#${state.gridNumberColor.getHexString()}`;
+  gridNumberSizeInput.value = String(state.gridNumberSize);
+  gridNumberSizeValue.textContent = String(Math.round(state.gridNumberSize));
+  gridNumberPlacementInput.value = state.gridNumberPlacement;
+  gridLabelShowInput.checked = state.gridLabelShow;
+  gridLabelFontInput.value = state.gridLabelFont;
+  gridLabelColorInput.value = `#${state.gridLabelColor.getHexString()}`;
+  gridLabelSizeInput.value = String(state.gridLabelSize);
+  gridLabelSizeValue.textContent = String(Math.round(state.gridLabelSize));
+  gridLabelPlacementInput.value = state.gridLabelPlacement;
+  showToonOutlineInput.checked = state.showToonOutline;
+  toonOutlineXrayInput.checked = state.toonOutlineXray;
+  toonOutlineDashedInput.checked = state.toonOutlineDashed;
+  toonOutlineDashLengthInput.value = String(state.toonOutlineDashLength);
+  toonOutlineDashGapInput.value = String(state.toonOutlineDashGap);
+  toonOutlineDashRepeatInput.value = String(state.toonOutlineDashRepeat);
   cameraTypeInput.value = state.cameraType;
   cameraFovInput.value = String(state.cameraFov);
   cameraFovValue.textContent = state.cameraFov.toFixed(0);

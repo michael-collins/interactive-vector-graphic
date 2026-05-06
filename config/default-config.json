@@ -1,12 +1,11 @@
 {
-  "activeStage": 1,
-  "stageCount": 5,
+  "activeStage": 4,
+  "stageCount": 4,
   "stageNames": [
     "Initial inspiration",
     "Finding some inspiration",
     "Stage 3",
-    "Stage 4",
-    "Stage 5"
+    "Stage 4"
   ],
   "seed": 60,
   "autoApplySeed": true,
@@ -19,16 +18,20 @@
   "sphereOpacity": 0.2,
   "shaderMode": "toon",
   "toonOutline": {
-    "show": true,
+    "show": false,
     "color": "#292929",
-    "thickness": 0.01
+    "thickness": 0.01,
+    "xray": false,
+    "dashed": false,
+    "dashLength": 0.5,
+    "dashGap": 0.35,
+    "dashRepeat": 16
   },
   "sphereStageColors": [
-    "#000000",
-    "#949494",
     "#ffffff",
     "#ffffff",
-    "#1d8cd6"
+    "#ffffff",
+    "#ffffff"
   ],
   "coneHistory": {
     "shaderMode": "flat",
@@ -39,12 +42,12 @@
     "inactiveOpacity": 0.6
   },
   "coneIntersection": {
-    "show": true,
+    "show": false,
     "color": "#5c5c5c",
     "width": 0.004
   },
   "initialConeIntersection": {
-    "show": true,
+    "show": false,
     "color": "#9c9c9c",
     "width": 0.004
   },
@@ -85,7 +88,7 @@
   "axes": {
     "show": true,
     "color": "#cfcfcf",
-    "length": 2.75,
+    "length": 2.25,
     "thickness": 0.015
   },
   "baseDirection": {
@@ -97,16 +100,38 @@
     "density": 0.06
   },
   "display": {
-    "mode": "single"
+    "mode": "grid",
+    "gridAspectRatio": "1:1",
+    "gridOuterMargin": 17,
+    "gridCellGap": 0,
+    "gridBorder": {
+      "show": true,
+      "color": "#6b7280",
+      "thickness": 2
+    },
+    "gridNumber": {
+      "show": true,
+      "font": "Inter, system-ui, sans-serif",
+      "color": "#111827",
+      "size": 15,
+      "placement": "top-left"
+    },
+    "gridLabel": {
+      "show": true,
+      "font": "Inter, system-ui, sans-serif",
+      "color": "#111827",
+      "size": 14,
+      "placement": "bottom-middle"
+    }
   },
   "camera": {
-    "type": "perspective",
-    "fov": 48,
-    "zoom": 1.5,
+    "type": "orthographic",
+    "fov": 44,
+    "zoom": 3.4,
     "position": {
-      "x": 3.9974628229477895,
-      "y": 4.249192981041761,
-      "z": 13.838871147845165
+      "x": 4.254621122822474,
+      "y": 5.800788223527448,
+      "z": 6.840289172121069
     }
   }
 }

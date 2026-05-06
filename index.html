@@ -32,6 +32,7 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
+        pointer-events: none;
       }
 
       .stage-bar {
@@ -44,6 +45,7 @@
         overflow-y: hidden;
         padding-bottom: 2px;
         scrollbar-width: thin;
+        pointer-events: auto;
       }
 
       .stage-list {
@@ -322,6 +324,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 8px;
+        pointer-events: auto;
       }
       .canvas-toolbar-spacer { flex: 1 1 auto; }
       #scene {
@@ -330,6 +333,15 @@
         width: 100%;
         height: 100%;
         display: block;
+      }
+
+      #gridBorderOverlay {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        pointer-events: none;
       }
 
       #downloadPngBtn {
@@ -434,6 +446,111 @@
               </select>
               <span></span>
 
+              <label for="gridAspectRatio">Grid Aspect</label>
+              <select id="gridAspectRatio">
+                <option value="free" selected>Free (Canvas)</option>
+                <option value="16:9">16 : 9</option>
+                <option value="4:3">4 : 3</option>
+                <option value="3:2">3 : 2</option>
+                <option value="1:1">1 : 1</option>
+                <option value="2:3">2 : 3</option>
+                <option value="9:16">9 : 16</option>
+              </select>
+              <span></span>
+
+              <label class="toggle" for="gridBorderToggle">
+                <input id="gridBorderToggle" type="checkbox" checked />
+                Grid Border
+              </label>
+              <span></span>
+              <span></span>
+
+              <label for="gridBorderColor">Border Color</label>
+              <input id="gridBorderColor" type="color" value="#e4e4e7" />
+              <span></span>
+
+              <label for="gridBorderThickness">Border Width</label>
+              <input id="gridBorderThickness" type="range" min="0.5" max="12" value="1" step="0.5" />
+              <output id="gridBorderThicknessValue" for="gridBorderThickness">1.0</output>
+
+              <label for="gridOuterMargin">Outer Margin</label>
+              <input id="gridOuterMargin" type="range" min="0" max="80" value="0" step="1" />
+              <output id="gridOuterMarginValue" for="gridOuterMargin">0</output>
+
+              <label for="gridCellGap">Cell Gap</label>
+              <input id="gridCellGap" type="range" min="0" max="40" value="0" step="1" />
+              <output id="gridCellGapValue" for="gridCellGap">0</output>
+
+              <label class="toggle" for="gridNumberShow">
+                <input id="gridNumberShow" type="checkbox" />
+                Show Stage Number
+              </label>
+              <span></span>
+              <span></span>
+
+              <label for="gridNumberFont">Number Font</label>
+              <select id="gridNumberFont">
+                <option value="Inter, system-ui, sans-serif" selected>Inter</option>
+                <option value="Arial, Helvetica, sans-serif">Arial</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="'Courier New', monospace">Courier New</option>
+              </select>
+              <span></span>
+
+              <label for="gridNumberColor">Number Color</label>
+              <input id="gridNumberColor" type="color" value="#111827" />
+              <span></span>
+
+              <label for="gridNumberSize">Number Size</label>
+              <input id="gridNumberSize" type="range" min="10" max="72" value="24" step="1" />
+              <output id="gridNumberSizeValue" for="gridNumberSize">24</output>
+
+              <label for="gridNumberPlacement">Number Placement</label>
+              <select id="gridNumberPlacement">
+                <option value="top-left">Top Left</option>
+                <option value="top-middle" selected>Top Middle</option>
+                <option value="top-right">Top Right</option>
+                <option value="bottom-left">Bottom Left</option>
+                <option value="bottom-middle">Bottom Middle</option>
+                <option value="bottom-right">Bottom Right</option>
+              </select>
+              <span></span>
+
+              <label class="toggle" for="gridLabelShow">
+                <input id="gridLabelShow" type="checkbox" />
+                Show Stage Label
+              </label>
+              <span></span>
+              <span></span>
+
+              <label for="gridLabelFont">Label Font</label>
+              <select id="gridLabelFont">
+                <option value="Inter, system-ui, sans-serif" selected>Inter</option>
+                <option value="Arial, Helvetica, sans-serif">Arial</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="'Courier New', monospace">Courier New</option>
+              </select>
+              <span></span>
+
+              <label for="gridLabelColor">Label Color</label>
+              <input id="gridLabelColor" type="color" value="#111827" />
+              <span></span>
+
+              <label for="gridLabelSize">Label Size</label>
+              <input id="gridLabelSize" type="range" min="10" max="48" value="16" step="1" />
+              <output id="gridLabelSizeValue" for="gridLabelSize">16</output>
+
+              <label for="gridLabelPlacement">Label Placement</label>
+              <select id="gridLabelPlacement">
+                <option value="top-left">Top Left</option>
+                <option value="top-middle" selected>Top Middle</option>
+                <option value="top-right">Top Right</option>
+                <option value="bottom-left">Bottom Left</option>
+                <option value="bottom-middle">Bottom Middle</option>
+                <option value="bottom-right">Bottom Right</option>
+              </select>
+              <span></span>
+
               <label for="cameraType">Camera Type</label>
               <select id="cameraType">
                 <option value="perspective" selected>Perspective</option>
@@ -533,14 +650,40 @@
 
               <label class="toggle" for="showToonOutline">
                 <input id="showToonOutline" type="checkbox" checked />
-                Toon Outlines
+                Sphere Outlines
               </label>
               <label for="toonOutlineColor">Outline Color</label>
               <input id="toonOutlineColor" type="color" value="#292929" />
 
+              <label class="toggle" for="toonOutlineXray">
+                <input id="toonOutlineXray" type="checkbox" />
+                Outline X-Ray
+              </label>
+              <span></span>
+              <span></span>
+
               <label for="toonOutlineThickness">Outline Thickness</label>
               <input id="toonOutlineThickness" type="range" min="0.002" max="0.08" value="0.01" step="0.002" />
               <output id="toonOutlineThicknessValue" for="toonOutlineThickness">0.010</output>
+
+              <label class="toggle" for="toonOutlineDashed">
+                <input id="toonOutlineDashed" type="checkbox" />
+                Dashed Outline
+              </label>
+              <span></span>
+              <span></span>
+
+              <label for="toonOutlineDashLength">Dash Length</label>
+              <input id="toonOutlineDashLength" type="range" min="0.05" max="0.95" value="0.5" step="0.05" />
+              <output id="toonOutlineDashLengthValue" for="toonOutlineDashLength">0.50</output>
+
+              <label for="toonOutlineDashGap">Dash Gap</label>
+              <input id="toonOutlineDashGap" type="range" min="0.05" max="0.95" value="0.35" step="0.05" />
+              <output id="toonOutlineDashGapValue" for="toonOutlineDashGap">0.35</output>
+
+              <label for="toonOutlineDashRepeat">Dash Repeat</label>
+              <input id="toonOutlineDashRepeat" type="range" min="4" max="48" value="16" step="1" />
+              <output id="toonOutlineDashRepeatValue" for="toonOutlineDashRepeat">16</output>
 
               <label for="sphereOpacity">Sphere Transparency</label>
               <input id="sphereOpacity" type="range" min="0.02" max="1" value="0.2" step="0.01" />
@@ -805,6 +948,7 @@
           </nav>
         </div>
         <canvas id="scene"></canvas>
+        <canvas id="gridBorderOverlay" aria-hidden="true"></canvas>
       </main>
 
     </div>
