@@ -617,13 +617,8 @@ function renderStageButtons() {
   stageBar.innerHTML = "";
   stageButtons = [];
   for (let i = 1; i <= state.stageCount; i += 1) {
-    const isLastStage = i === state.stageCount;
-
     const chip = document.createElement("div");
     chip.className = "stage-chip";
-    if (isLastStage) {
-      chip.classList.add("is-last");
-    }
 
     const btn = document.createElement("button");
     btn.type = "button";
@@ -647,30 +642,34 @@ function renderStageButtons() {
 
     chip.appendChild(btn);
 
-    if (isLastStage && state.stageCount > state.stageMin) {
-      const removeBtn = document.createElement("button");
-      removeBtn.type = "button";
-      removeBtn.className = "stage-remove-btn";
-      removeBtn.setAttribute("aria-label", "Remove last stage");
-      removeBtn.title = "Remove last stage";
-      removeBtn.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true" focusable="false">
-          <path d="M6 6 L18 18"></path>
-          <path d="M18 6 L6 18"></path>
-        </svg>
-      `;
-      removeBtn.addEventListener("click", (event) => {
-        event.stopPropagation();
-        state.stageCount -= 1;
-        ensureStageNames();
-        ensureStageColors();
-        rebuildStageGeometry();
-      });
-      chip.appendChild(removeBtn);
-    }
-
     stageBar.appendChild(chip);
     stageButtons.push(btn);
+  }
+
+  if (state.stageCount > state.stageMin) {
+    const removeChip = document.createElement("div");
+    removeChip.className = "stage-chip stage-remove-chip";
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "stage-remove-btn";
+    removeBtn.setAttribute("aria-label", "Remove last stage");
+    removeBtn.title = "Remove last stage";
+    removeBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true" focusable="false">
+        <path d="M6 12h12"></path>
+      </svg>
+    `;
+    removeBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      state.stageCount -= 1;
+      ensureStageNames();
+      ensureStageColors();
+      rebuildStageGeometry();
+    });
+
+    removeChip.appendChild(removeBtn);
+    stageBar.appendChild(removeChip);
   }
 
   addStageBtn.disabled = state.stageCount >= state.stageMax;
