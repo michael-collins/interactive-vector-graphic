@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Creative Vector Refinement</title>
+    <title>Collins-Brill Knowledge Vector Refinement Model</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -22,17 +22,28 @@
         padding: 16px;
       }
 
-      /* ── Stage nav — overlaid top-center of canvas ── */
-      .stage-bar {
+      /* ── Stage nav / toolbar over canvas ───────────── */
+      .scene-ui {
         position: absolute;
         top: 10px;
-        left: 50%;
-        transform: translateX(-50%);
+        left: 10px;
+        right: 10px;
         z-index: 12;
-        display: inline-flex;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .stage-bar {
+        display: flex;
         align-items: center;
+        justify-content: center;
         gap: 6px;
         white-space: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 2px;
+        scrollbar-width: thin;
       }
 
       .stage-list {
@@ -122,25 +133,28 @@
       .stage-add-btn:hover:not(:disabled) { background: rgba(244,244,245,0.95); color: #52525b; border-color: #a1a1aa; }
       .stage-add-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-      /* ── Config panel (fixed sidebar) ────────────── */
+      /* ── Config panel (opened via icon) ───────────── */
       .config-panel {
-        position: fixed;
-        top: 14px;
-        right: 14px;
+        position: absolute;
+        top: 44px;
+        right: 0;
         width: min(340px, calc(100vw - 24px));
         z-index: 30;
         overflow: hidden;
+        display: none;
         @apply bg-white border border-zinc-200 rounded-lg shadow-lg;
       }
-      .config-panel > summary {
-        @apply flex items-center justify-between px-4 py-2.5 cursor-pointer
-               text-sm font-semibold text-zinc-700 bg-zinc-50 border-b border-zinc-200;
-        list-style: none;
-        user-select: none;
+      .config-panel.is-open { display: block; }
+
+      .config-panel-header {
+        @apply flex items-center justify-between px-4 py-2.5 bg-zinc-50 border-b border-zinc-200;
       }
-      .config-panel > summary::-webkit-details-marker { display: none; }
-      .config-panel > summary::after { content: '▼'; @apply text-zinc-400 text-[10px]; }
-      .config-panel[open] > summary::after { content: '▲'; }
+      .config-panel-title { @apply text-sm font-semibold text-zinc-700; }
+      .config-close-btn {
+        @apply inline-flex items-center justify-center rounded-md border border-zinc-200 bg-white
+               text-[11px] font-medium text-zinc-700 shadow-sm cursor-pointer px-2.5 py-1 transition-colors;
+      }
+      .config-close-btn:hover { @apply bg-zinc-50 border-zinc-300; }
 
       .config-sections {
         display: flex;
@@ -298,21 +312,55 @@
       /* ── Scene / canvas ──────────────────────────── */
       .scene-wrap {
         position: relative;
-        min-height: 460px;
+        height: clamp(420px, 72vh, 860px);
+        min-height: 420px;
         @apply rounded-lg overflow-hidden border border-zinc-200 bg-white;
       }
       .scene-wrap.grid-mode canvas { @apply border border-zinc-100; }
-      .canvas-toolbar { position: absolute; top: 10px; left: 10px; z-index: 12; }
-      #scene { width: 100%; height: 100%; display: block; }
+      .canvas-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .canvas-toolbar-spacer { flex: 1 1 auto; }
+      #scene {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
 
       #downloadPngBtn {
         @apply inline-flex items-center justify-center rounded-md border border-zinc-200 bg-white/90
-               text-[11px] font-medium text-zinc-600 shadow-sm cursor-pointer px-3 py-1.5 transition-colors;
+               text-zinc-600 shadow-sm cursor-pointer px-2.5 py-1.5 transition-colors;
         font-family: inherit;
         backdrop-filter: blur(4px);
       }
       #downloadPngBtn:hover:not(:disabled) { @apply bg-zinc-50; }
       #downloadPngBtn:disabled { @apply opacity-50 cursor-wait; }
+      #downloadPngBtn svg {
+        width: 14px;
+        height: 14px;
+        display: block;
+        flex-shrink: 0;
+      }
+
+      #settingsBtn {
+        @apply inline-flex items-center justify-center rounded-md border border-zinc-200 bg-white/90
+               text-zinc-600 shadow-sm cursor-pointer px-2.5 py-1.5 transition-colors;
+        backdrop-filter: blur(4px);
+      }
+      #settingsBtn:hover { @apply bg-zinc-50; }
+      #settingsBtn svg {
+        width: 14px;
+        height: 14px;
+        display: block;
+        flex-shrink: 0;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
 
       /* ── Legend ──────────────────────────────────── */
       .legend { @apply flex gap-4 flex-wrap items-center text-xs text-zinc-400 pt-1; }
@@ -324,8 +372,30 @@
       /* ── Responsive ──────────────────────────────── */
       @media (max-width: 700px) {
         .app-shell { padding: 10px; gap: 8px; }
-        .config-panel { position: static; width: 100%; max-height: none; }
-        .config-sections { max-height: none; }
+        .scene-ui {
+          top: 8px;
+          left: 8px;
+          right: 8px;
+          gap: 6px;
+        }
+        .scene-wrap {
+          height: clamp(360px, 66vh, 640px);
+          min-height: 360px;
+        }
+        .canvas-toolbar { justify-content: flex-start; }
+        .config-panel {
+          top: 42px;
+          right: 0;
+          width: calc(100vw - 16px);
+          max-height: calc(100vh - 90px);
+        }
+        .config-sections { max-height: calc(100vh - 130px); }
+        .stage-bar {
+          justify-content: flex-start;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .stage-list, .stage-add-btn { flex: 0 0 auto; }
       }
     </style>
     <script type="importmap">
@@ -341,15 +411,18 @@
     <div class="app-shell">
 
       <header class="bg-white border border-zinc-200 rounded-lg px-4 py-3 shadow-sm">
-        <h1 class="text-xl font-semibold tracking-tight text-zinc-900">Creative Process Vector Journey</h1>
-        <p class="text-sm text-zinc-500 mt-0.5">
+        <h1 class="text-xl font-semibold tracking-tight text-zinc-900">Collins-Brill Knowledge Vector Refinement Model</h1>
+        <!-- <p class="text-sm text-zinc-500 mt-0.5">
           Click stages to animate sphere scale and directional evolution. Adjust the
           cone to widen or narrow possibility space.
-        </p>
+        </p> -->
       </header>
 
-      <details class="config-panel">
-        <summary>Visualization Config</summary>
+      <aside id="configPanel" class="config-panel" aria-label="Visual settings" aria-hidden="true">
+        <div class="config-panel-header">
+          <h2 class="config-panel-title">Visualization Config</h2>
+          <button id="closeConfigBtn" class="config-close-btn" type="button" aria-label="Close settings">Close</button>
+        </div>
         <section class="config-sections" aria-label="Visual settings">
 
           <details class="config-group" open>
@@ -703,15 +776,34 @@
           </details>
 
         </section>
-      </details>
+      </aside>
 
       <main class="scene-wrap">
-        <nav class="stage-bar" aria-label="Process stages">
-          <div class="stage-list"></div>
-          <button id="addStageBtn" class="stage-add-btn" type="button" aria-label="Add stage">+ Stage</button>
-        </nav>
-        <div class="canvas-toolbar" aria-label="Canvas actions">
-          <button id="downloadPngBtn" type="button">Download PNG</button>
+        <div class="scene-ui">
+          <div class="canvas-toolbar" aria-label="Canvas actions">
+            <button id="downloadPngBtn" type="button" aria-label="Download PNG" title="Download PNG">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M12 3v11"></path>
+                <path d="M8 10.5 12 14.5 16 10.5"></path>
+                <path d="M4 17.5h16"></path>
+              </svg>
+            </button>
+            <span class="canvas-toolbar-spacer" aria-hidden="true"></span>
+            <button id="settingsBtn" type="button" aria-label="Open settings" aria-expanded="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <line x1="4" y1="6" x2="20" y2="6"></line>
+                <circle cx="9" cy="6" r="2"></circle>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <circle cx="15" cy="12" r="2"></circle>
+                <line x1="4" y1="18" x2="20" y2="18"></line>
+                <circle cx="11" cy="18" r="2"></circle>
+              </svg>
+            </button>
+          </div>
+          <nav class="stage-bar" aria-label="Process stages">
+            <div class="stage-list"></div>
+            <button id="addStageBtn" class="stage-add-btn" type="button" aria-label="Add stage">+ Stage</button>
+          </nav>
         </div>
         <canvas id="scene"></canvas>
       </main>

@@ -5,6 +5,9 @@ const canvas = document.querySelector("#scene");
 const stageBar = document.querySelector(".stage-list");
 const stageColorList = document.querySelector("#stageColorList");
 const downloadPngBtn = document.querySelector("#downloadPngBtn");
+const settingsBtn = document.querySelector("#settingsBtn");
+const configPanel = document.querySelector("#configPanel");
+const closeConfigBtn = document.querySelector("#closeConfigBtn");
 
 const coneRange = document.querySelector("#coneRange");
 const coneValue = document.querySelector("#coneValue");
@@ -1130,8 +1133,13 @@ function animate() {
 }
 
 function onResize() {
-  const parent = canvas.parentElement;
-  const aspect = parent.clientWidth / parent.clientHeight;
+  const width = sceneWrap.clientWidth;
+  const height = sceneWrap.clientHeight;
+  if (width <= 0 || height <= 0) {
+    return;
+  }
+
+  const aspect = width / height;
 
   if (state.cameraType === "perspective") {
     perspectiveCamera.aspect = aspect;
@@ -1145,7 +1153,7 @@ function onResize() {
     orthographicCamera.updateProjectionMatrix();
   }
 
-  renderer.setSize(parent.clientWidth, parent.clientHeight, false);
+  renderer.setSize(width, height, false);
 }
 
 function timestampForFilename() {
@@ -1165,7 +1173,6 @@ function downloadHiResPng(scale = 3) {
   const previousAspect = camera.aspect;
 
   downloadPngBtn.disabled = true;
-  downloadPngBtn.textContent = "Rendering...";
 
   try {
     renderer.setPixelRatio(1);
@@ -1193,11 +1200,42 @@ function downloadHiResPng(scale = 3) {
     controls.update();
     renderer.render(scene, camera);
     downloadPngBtn.disabled = false;
-    downloadPngBtn.textContent = "Download PNG";
   }
 }
 
 function bindControls() {
+  const setConfigPanelOpen = (isOpen) => {
+    configPanel.classList.toggle("is-open", isOpen);
+    configPanel.setAttribute("aria-hidden", isOpen ? "false" : "true");
+    settingsBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  };
+
+  settingsBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const isOpen = configPanel.classList.contains("is-open");
+    setConfigPanelOpen(!isOpen);
+  });
+
+  closeConfigBtn.addEventListener("click", () => {
+    setConfigPanelOpen(false);
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!configPanel.classList.contains("is-open")) {
+      return;
+    }
+    if (configPanel.contains(event.target) || settingsBtn.contains(event.target)) {
+      return;
+    }
+    setConfigPanelOpen(false);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      setConfigPanelOpen(false);
+    }
+  });
+
   downloadPngBtn.addEventListener("click", () => {
     downloadHiResPng(3);
   });
@@ -1708,6 +1746,13 @@ function setInitialOutputValues() {
 }
 
 window.addEventListener("resize", onResize);
+
+if (typeof ResizeObserver !== "undefined") {
+  const sceneResizeObserver = new ResizeObserver(() => {
+    onResize();
+  });
+  sceneResizeObserver.observe(sceneWrap);
+}
 
 ensureStageNames();
 ensureStageColors();
