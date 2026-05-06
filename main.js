@@ -652,7 +652,13 @@ function renderStageButtons() {
       removeBtn.type = "button";
       removeBtn.className = "stage-remove-btn";
       removeBtn.setAttribute("aria-label", "Remove last stage");
-      removeBtn.textContent = "x";
+      removeBtn.title = "Remove last stage";
+      removeBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true" focusable="false">
+          <path d="M6 6 L18 18"></path>
+          <path d="M18 6 L6 18"></path>
+        </svg>
+      `;
       removeBtn.addEventListener("click", (event) => {
         event.stopPropagation();
         state.stageCount -= 1;
