@@ -2,10 +2,10 @@
   "activeStage": 4,
   "stageCount": 4,
   "stageNames": [
-    "Initial inspiration",
-    "Finding some inspiration",
-    "Stage 3",
-    "Stage 4"
+    "Provacation",
+    "Inspiration",
+    "Iteration",
+    "Delivery"
   ],
   "seed": 60,
   "autoApplySeed": true,
@@ -100,7 +100,7 @@
     "density": 0.06
   },
   "display": {
-    "mode": "grid",
+    "mode": "single",
     "gridAspectRatio": "1:1",
     "gridOuterMargin": 17,
     "gridCellGap": 0,
@@ -131,9 +131,9 @@
     "fov": 44,
     "zoom": 3.4,
     "position": {
-      "x": 4.8862554468215,
-      "y": 3.548264067440773,
-      "z": 8.026204346382428
+      "x": 4.142212502912196,
+      "y": 3.923701672363759,
+      "z": 8.242680154820476
     }
   }
 }
