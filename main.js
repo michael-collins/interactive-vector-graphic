@@ -117,6 +117,42 @@ const axisLengthValue = document.querySelector("#axisLengthValue");
 const axisThicknessInput = document.querySelector("#axisThickness");
 const axisThicknessValue = document.querySelector("#axisThicknessValue");
 
+const showDotLabelsInput = document.querySelector("#showDotLabels");
+const showOriginLabelInput = document.querySelector("#showOriginLabel");
+const originLabelTextInput = document.querySelector("#originLabelText");
+const showVectorEndLabelInput = document.querySelector("#showVectorEndLabel");
+const vectorEndLabelTextModeInput = document.querySelector("#vectorEndLabelTextMode");
+const vectorEndLabelTextInput = document.querySelector("#vectorEndLabelText");
+const showInitialVectorEndLabelInput = document.querySelector("#showInitialVectorEndLabel");
+const initialVectorEndLabelTextInput = document.querySelector("#initialVectorEndLabelText");
+const labelFontInput = document.querySelector("#labelFont");
+const labelSizeInput = document.querySelector("#labelSize");
+const labelSizeValue = document.querySelector("#labelSizeValue");
+const labelColorInput = document.querySelector("#labelColor");
+const labelTextTransformInput = document.querySelector("#labelTextTransform");
+const labelPlacementInput = document.querySelector("#labelPlacement");
+const labelMarginInput = document.querySelector("#labelMargin");
+const labelMarginValue = document.querySelector("#labelMarginValue");
+const labelPointerOffsetInput = document.querySelector("#labelPointerOffset");
+const labelPointerOffsetValue = document.querySelector("#labelPointerOffsetValue");
+const labelOffsetInput = document.querySelector("#labelOffset");
+const labelOffsetValue = document.querySelector("#labelOffsetValue");
+const labelPaddingXInput = document.querySelector("#labelPaddingX");
+const labelPaddingXValue = document.querySelector("#labelPaddingXValue");
+const labelPaddingYInput = document.querySelector("#labelPaddingY");
+const labelPaddingYValue = document.querySelector("#labelPaddingYValue");
+const labelBoxColorInput = document.querySelector("#labelBoxColor");
+const labelBoxOpacityInput = document.querySelector("#labelBoxOpacity");
+const labelBoxOpacityValue = document.querySelector("#labelBoxOpacityValue");
+const labelBorderColorInput = document.querySelector("#labelBorderColor");
+const labelBorderWidthInput = document.querySelector("#labelBorderWidth");
+const labelBorderWidthValue = document.querySelector("#labelBorderWidthValue");
+const labelBorderRadiusInput = document.querySelector("#labelBorderRadius");
+const labelBorderRadiusValue = document.querySelector("#labelBorderRadiusValue");
+const labelPointerShowInput = document.querySelector("#labelPointerShow");
+const labelPointerSizeInput = document.querySelector("#labelPointerSize");
+const labelPointerSizeValue = document.querySelector("#labelPointerSizeValue");
+
 const exportConfigBtn = document.querySelector("#exportConfigBtn");
 const copyConfigBtn = document.querySelector("#copyConfigBtn");
 const configExportArea = document.querySelector("#configExport");
@@ -147,6 +183,9 @@ const gridLabelSizeValue = document.querySelector("#gridLabelSizeValue");
 const gridLabelMarginInput = document.querySelector("#gridLabelMargin");
 const gridLabelMarginValue = document.querySelector("#gridLabelMarginValue");
 const gridLabelPlacementInput = document.querySelector("#gridLabelPlacement");
+const gridSyncCellCamerasInput = document.querySelector("#gridSyncCellCameras");
+const gridSyncCellZoomInput = document.querySelector("#gridSyncCellZoom");
+const resetGridCellCameraBtn = document.querySelector("#resetGridCellCameraBtn");
 const gridBorderOverlay = document.querySelector("#gridBorderOverlay");
 const gridBorderCtx = gridBorderOverlay.getContext("2d");
 const cameraTypeInput = document.querySelector("#cameraType");
@@ -307,6 +346,31 @@ const state = {
   showDotOutline: toBoolean(cfg.dots?.outline?.show, true),
   dotOutlineColor: toColor(cfg.dots?.outline?.color, dotOutlineColorInput.value),
   dotOutlineThickness: toNumber(cfg.dots?.outline?.thickness, Number(dotOutlineThicknessInput.value)),
+  showDotLabels: toBoolean(cfg.labels?.showDotLabels, true),
+  showOriginLabel: toBoolean(cfg.labels?.showOriginLabel, true),
+  originLabelText: typeof cfg.labels?.originText === "string" ? cfg.labels.originText : "Origin",
+  showVectorEndLabel: toBoolean(cfg.labels?.showVectorEndLabel, true),
+  vectorEndTextMode: typeof cfg.labels?.vectorEndTextMode === "string" ? cfg.labels.vectorEndTextMode : "stage",
+  vectorEndText: typeof cfg.labels?.vectorEndText === "string" ? cfg.labels.vectorEndText : "Vector End",
+  showInitialVectorEndLabel: toBoolean(cfg.labels?.showInitialVectorEndLabel, false),
+  initialVectorEndText: typeof cfg.labels?.initialVectorEndText === "string" ? cfg.labels.initialVectorEndText : "Initial Vector",
+  labelFont: typeof cfg.labels?.font === "string" ? cfg.labels.font : "Inter, system-ui, sans-serif",
+  labelSize: toNumber(cfg.labels?.size, 14),
+  labelColor: toColor(cfg.labels?.color, "#111827"),
+  labelTextTransform: typeof cfg.labels?.textTransform === "string" ? cfg.labels.textTransform : "none",
+  labelPlacement: typeof cfg.labels?.placement === "string" ? cfg.labels.placement : "above",
+  labelMargin: toNumber(cfg.labels?.margin, 10),
+  labelPointerOffset: toNumber(cfg.labels?.pointerOffset, 0),
+  labelOffset: toNumber(cfg.labels?.labelOffset ?? cfg.labels?.offset, 0),
+  labelPaddingX: toNumber(cfg.labels?.paddingX, 8),
+  labelPaddingY: toNumber(cfg.labels?.paddingY, 5),
+  labelBoxColor: toColor(cfg.labels?.box?.color, "#ffffff"),
+  labelBoxOpacity: toNumber(cfg.labels?.box?.opacity, 0.9),
+  labelBorderColor: toColor(cfg.labels?.box?.borderColor, "#111827"),
+  labelBorderWidth: toNumber(cfg.labels?.box?.borderWidth, 1),
+  labelBorderRadius: toNumber(cfg.labels?.box?.borderRadius, 6),
+  labelPointerShow: toBoolean(cfg.labels?.pointer?.show, true),
+  labelPointerSize: toNumber(cfg.labels?.pointer?.size, 8),
   showAxes: toBoolean(cfg.axes?.show, true),
   axisColor: toColor(cfg.axes?.color, axisColorInput.value),
   axisLength: toNumber(cfg.axes?.length, Number(axisLengthInput.value)),
@@ -332,6 +396,14 @@ const state = {
   gridLabelSize: toNumber(cfg.display?.gridLabel?.size, 16),
   gridLabelMargin: toNumber(cfg.display?.gridLabel?.margin, 6),
   gridLabelPlacement: typeof cfg.display?.gridLabel?.placement === "string" ? cfg.display.gridLabel.placement : "top-middle",
+  gridSyncCellCameras: toBoolean(
+    cfg.display?.gridSyncCellCameras,
+    (typeof cfg.display?.gridCameraMode === "string" ? cfg.display.gridCameraMode : "sync") !== "custom"
+  ),
+  gridSyncCellZoom: toBoolean(
+    cfg.display?.gridSyncCellZoom,
+    (typeof cfg.display?.gridCameraMode === "string" ? cfg.display.gridCameraMode : "sync") !== "custom"
+  ),
   cameraType: typeof cfg.camera?.type === "string" ? cfg.camera.type : "perspective",
   cameraFov: toNumber(cfg.camera?.fov, 48),
   cameraZoom: toNumber(cfg.camera?.zoom, 1.5)
@@ -349,6 +421,153 @@ let hitDotOutlines = [];
 let stageConeMeshes = [];
 let axisMeshes = [];
 let stageButtons = [];
+let activeGridCameraCell = 0;
+let gridCellViews = [];
+
+function createGridViewFromCurrentCamera() {
+  return {
+    position: camera.position.clone(),
+    target: controls.target.clone(),
+    zoom: camera.zoom
+  };
+}
+
+function parseGridCustomViews(rawViews) {
+  if (!Array.isArray(rawViews)) {
+    return [];
+  }
+  return rawViews.map((entry) => {
+    const position = readCameraPosition(entry?.position);
+    const target = readCameraPosition(entry?.target);
+    if (!position || !target) {
+      return null;
+    }
+    const zoom = Number(entry?.zoom);
+    return {
+      position,
+      target,
+      zoom: Number.isFinite(zoom) ? zoom : camera.zoom
+    };
+  });
+}
+
+function ensureGridCellViews() {
+  while (gridCellViews.length < state.stageCount) {
+    gridCellViews.push(createGridViewFromCurrentCamera());
+  }
+  gridCellViews = gridCellViews.slice(0, state.stageCount).map((view) => {
+    if (!view || !view.position || !view.target) {
+      return createGridViewFromCurrentCamera();
+    }
+    return {
+      position: view.position.clone(),
+      target: view.target.clone(),
+      zoom: Number.isFinite(view.zoom) ? view.zoom : camera.zoom
+    };
+  });
+  activeGridCameraCell = THREE.MathUtils.clamp(activeGridCameraCell, 0, Math.max(0, state.stageCount - 1));
+}
+
+function shouldUsePerCellCamera() {
+  return state.displayMode === "grid" && !state.gridSyncCellCameras;
+}
+
+function shouldUsePerCellZoom() {
+  return state.displayMode === "grid" && !state.gridSyncCellZoom;
+}
+
+function getGridCellViewOverride(index) {
+  const view = gridCellViews[index];
+  if (!view) {
+    return null;
+  }
+  const usePerCellCamera = shouldUsePerCellCamera();
+  const usePerCellZoom = shouldUsePerCellZoom();
+  if (!usePerCellCamera && !usePerCellZoom) {
+    return null;
+  }
+  return {
+    position: usePerCellCamera ? view.position : undefined,
+    target: usePerCellCamera ? view.target : undefined,
+    zoom: usePerCellZoom ? view.zoom : undefined
+  };
+}
+
+function applyGridCellViewToMainCamera(index) {
+  const view = gridCellViews[index];
+  if (!view) {
+    return;
+  }
+  if (shouldUsePerCellCamera()) {
+    camera.position.copy(view.position);
+    controls.target.copy(view.target);
+  }
+  if (shouldUsePerCellZoom()) {
+    camera.zoom = Number.isFinite(view.zoom) ? view.zoom : camera.zoom;
+    camera.updateProjectionMatrix();
+  }
+  controls.update();
+}
+
+function saveMainCameraToGridCell(index) {
+  if (index < 0 || index >= gridCellViews.length) {
+    return;
+  }
+  const next = {
+    position: gridCellViews[index]?.position?.clone?.() ?? camera.position.clone(),
+    target: gridCellViews[index]?.target?.clone?.() ?? controls.target.clone(),
+    zoom: Number.isFinite(gridCellViews[index]?.zoom) ? gridCellViews[index].zoom : camera.zoom
+  };
+  if (shouldUsePerCellCamera()) {
+    next.position = camera.position.clone();
+    next.target = controls.target.clone();
+  }
+  if (shouldUsePerCellZoom()) {
+    next.zoom = camera.zoom;
+  }
+  gridCellViews[index] = next;
+}
+
+function resetActiveGridCellCamera() {
+  if (gridCellViews.length === 0) {
+    ensureGridCellViews();
+  }
+  gridCellViews[activeGridCameraCell] = createGridViewFromCurrentCamera();
+  applyGridCellViewToMainCamera(activeGridCameraCell);
+}
+
+function updateGridCameraModeUi() {
+  const perCellCamera = shouldUsePerCellCamera();
+  resetGridCellCameraBtn.disabled = !perCellCamera;
+}
+
+function getGridLayoutForCurrentCanvas() {
+  const width = Math.max(1, canvas.clientWidth);
+  const height = Math.max(1, canvas.clientHeight);
+  const wrapRect = sceneWrap.getBoundingClientRect();
+  const uiRect = sceneUi.getBoundingClientRect();
+  const topInset = Math.max(0, Math.round(uiRect.bottom - wrapRect.top + 8));
+  return computeGridLayout(width, height, topInset);
+}
+
+function selectGridCameraCellFromPointerEvent(event) {
+  if (state.displayMode !== "grid" || (state.gridSyncCellCameras && state.gridSyncCellZoom)) {
+    return;
+  }
+  const layout = getGridLayoutForCurrentCanvas();
+  const rect = canvas.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  const idx = layout.cells.findIndex((cell) =>
+    x >= cell.x && x <= cell.x + cell.width && y >= cell.y && y <= cell.y + cell.height
+  );
+  if (idx >= 0) {
+    ensureGridCellViews();
+    activeGridCameraCell = idx;
+    applyGridCellViewToMainCamera(activeGridCameraCell);
+    updateGridCameraModeUi();
+  }
+}
 
 function createDotMaterial(color) {
   return new THREE.MeshBasicMaterial({
@@ -753,6 +972,7 @@ function rebuildStageGeometry() {
   state.targetStage = THREE.MathUtils.clamp(state.targetStage, 1, state.stageCount);
   state.animatedStage = THREE.MathUtils.clamp(state.animatedStage, 1, state.stageCount);
   stageCountValue.textContent = String(state.stageCount);
+  ensureGridCellViews();
   renderStageButtons();
   renderStageColorInputs();
 }
@@ -960,6 +1180,38 @@ function buildConfigSnapshot() {
         thickness: state.dotOutlineThickness
       }
     },
+    labels: {
+      showDotLabels: state.showDotLabels,
+      showOriginLabel: state.showOriginLabel,
+      originText: state.originLabelText,
+      showVectorEndLabel: state.showVectorEndLabel,
+      vectorEndTextMode: state.vectorEndTextMode,
+      vectorEndText: state.vectorEndText,
+      showInitialVectorEndLabel: state.showInitialVectorEndLabel,
+      initialVectorEndText: state.initialVectorEndText,
+      font: state.labelFont,
+      size: state.labelSize,
+      color: `#${state.labelColor.getHexString()}`,
+      textTransform: state.labelTextTransform,
+      placement: state.labelPlacement,
+      margin: state.labelMargin,
+      pointerOffset: state.labelPointerOffset,
+      labelOffset: state.labelOffset,
+      offset: state.labelOffset,
+      paddingX: state.labelPaddingX,
+      paddingY: state.labelPaddingY,
+      box: {
+        color: `#${state.labelBoxColor.getHexString()}`,
+        opacity: state.labelBoxOpacity,
+        borderColor: `#${state.labelBorderColor.getHexString()}`,
+        borderWidth: state.labelBorderWidth,
+        borderRadius: state.labelBorderRadius
+      },
+      pointer: {
+        show: state.labelPointerShow,
+        size: state.labelPointerSize
+      }
+    },
     axes: {
       show: state.showAxes,
       color: `#${state.axisColor.getHexString()}`,
@@ -977,6 +1229,8 @@ function buildConfigSnapshot() {
     display: {
       mode: state.displayMode,
       gridAspectRatio: state.gridAspectRatio,
+      gridSyncCellCameras: state.gridSyncCellCameras,
+      gridSyncCellZoom: state.gridSyncCellZoom,
       gridOuterMargin: state.gridOuterMargin,
       gridCellGap: state.gridCellGap,
       gridBorder: {
@@ -999,7 +1253,20 @@ function buildConfigSnapshot() {
         size: state.gridLabelSize,
         margin: state.gridLabelMargin,
         placement: state.gridLabelPlacement
-      }
+      },
+      gridCustomCameras: gridCellViews.map((view) => ({
+        position: {
+          x: view.position.x,
+          y: view.position.y,
+          z: view.position.z
+        },
+        target: {
+          x: view.target.x,
+          y: view.target.y,
+          z: view.target.z
+        },
+        zoom: view.zoom
+      }))
     },
     camera: {
       type: state.cameraType,
@@ -1224,8 +1491,12 @@ function ensureOverlayCanvasSize(width, height) {
   }
 }
 
-function createRenderCameraForAspect(aspect) {
+function createRenderCameraForAspect(aspect, viewOverride = null) {
   const safeAspect = Math.max(0.0001, aspect);
+  const sourcePosition = viewOverride?.position ?? camera.position;
+  const sourceTarget = viewOverride?.target ?? controls.target;
+  const sourceZoom = Number.isFinite(viewOverride?.zoom) ? viewOverride.zoom : camera.zoom;
+
   if (camera.isOrthographicCamera) {
     const tempCamera = new THREE.OrthographicCamera(
       -safeAspect * state.cameraZoom,
@@ -1235,10 +1506,11 @@ function createRenderCameraForAspect(aspect) {
       camera.near,
       camera.far
     );
-    tempCamera.position.copy(camera.position);
-    tempCamera.quaternion.copy(camera.quaternion);
-    tempCamera.zoom = camera.zoom;
+    tempCamera.position.copy(sourcePosition);
+    tempCamera.lookAt(sourceTarget);
+    tempCamera.zoom = sourceZoom;
     tempCamera.updateProjectionMatrix();
+    tempCamera.updateMatrixWorld(true);
     return tempCamera;
   }
 
@@ -1248,10 +1520,11 @@ function createRenderCameraForAspect(aspect) {
     camera.near,
     camera.far
   );
-  tempCamera.position.copy(camera.position);
-  tempCamera.quaternion.copy(camera.quaternion);
-  tempCamera.zoom = camera.zoom;
+  tempCamera.position.copy(sourcePosition);
+  tempCamera.lookAt(sourceTarget);
+  tempCamera.zoom = sourceZoom;
   tempCamera.updateProjectionMatrix();
+  tempCamera.updateMatrixWorld(true);
   return tempCamera;
 }
 
@@ -1461,6 +1734,264 @@ function drawGridTextAnnotations(ctx, layout, textScale = 1) {
   }
 }
 
+function applyTextTransform(text) {
+  const value = String(text ?? "");
+  if (state.labelTextTransform === "uppercase") {
+    return value.toUpperCase();
+  }
+  if (state.labelTextTransform === "lowercase") {
+    return value.toLowerCase();
+  }
+  if (state.labelTextTransform === "capitalize") {
+    return value.replace(/\b\w/g, (m) => m.toUpperCase());
+  }
+  return value;
+}
+
+function colorToRgbaString(color, alpha = 1) {
+  const r = Math.round(THREE.MathUtils.clamp(color.r, 0, 1) * 255);
+  const g = Math.round(THREE.MathUtils.clamp(color.g, 0, 1) * 255);
+  const b = Math.round(THREE.MathUtils.clamp(color.b, 0, 1) * 255);
+  return `rgba(${r}, ${g}, ${b}, ${THREE.MathUtils.clamp(alpha, 0, 1).toFixed(4)})`;
+}
+
+function worldToCanvasPosition(worldPoint, cameraToUse, viewport) {
+  const projected = worldPoint.clone().project(cameraToUse);
+  return {
+    x: viewport.x + (projected.x * 0.5 + 0.5) * viewport.width,
+    y: viewport.y + (-projected.y * 0.5 + 0.5) * viewport.height,
+    onScreen: projected.z >= -1.2 && projected.z <= 1.2
+  };
+}
+
+function getPointLabelContext(stageValue) {
+  const clampedStage = THREE.MathUtils.clamp(stageValue, 1, state.stageCount);
+  const targetStage = THREE.MathUtils.clamp(Math.round(clampedStage), 1, state.stageCount);
+  const maxVisibleStage = targetStage;
+  const dirs = getStageDirections();
+  const stagePoints = stageRadii.map((r, i) => new THREE.Vector3().copy(dirs[i]).multiplyScalar(r));
+  const savedAnimatedStage = state.animatedStage;
+  state.animatedStage = clampedStage;
+  const currentPoint = new THREE.Vector3().copy(getLerpedDirection(dirs)).multiplyScalar(getLerpedRadius());
+  state.animatedStage = savedAnimatedStage;
+
+  const initialDirection = dirs[0] ?? baseDirection;
+  const initialRadius = stageRadii[Math.max(0, maxVisibleStage - 1)] ?? stageRadii[0] ?? 0;
+  const initialPoint = initialDirection.clone().multiplyScalar(initialRadius);
+
+  return {
+    targetStage,
+    maxVisibleStage,
+    stagePoints,
+    currentPoint,
+    initialPoint
+  };
+}
+
+function getPointLabelEntries(stageValue) {
+  const ctx = getPointLabelContext(stageValue);
+  const labels = [];
+
+  if (state.showDotLabels) {
+    for (let i = 0; i < ctx.maxVisibleStage; i += 1) {
+      labels.push({
+        text: state.stageNames[i] || `Stage ${i + 1}`,
+        point: ctx.stagePoints[i]
+      });
+    }
+  }
+
+  if (state.showOriginLabel) {
+    labels.push({
+      text: state.originLabelText || "Origin",
+      point: new THREE.Vector3(0, 0, 0)
+    });
+  }
+
+  if (state.showVectorEndLabel) {
+    const stageName = state.stageNames[ctx.targetStage - 1] || `Stage ${ctx.targetStage}`;
+    labels.push({
+      text: state.vectorEndTextMode === "custom" ? (state.vectorEndText || "Vector End") : stageName,
+      point: ctx.currentPoint
+    });
+  }
+
+  if (state.showInitialVectorEndLabel && ctx.targetStage > 1) {
+    labels.push({
+      text: state.initialVectorEndText || "Initial Vector",
+      point: ctx.initialPoint
+    });
+  }
+
+  return labels;
+}
+
+function roundedRectPath(ctx, x, y, width, height, radius) {
+  const r = Math.max(0, Math.min(radius, Math.min(width, height) / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawPointerPath(ctx, placement, anchorX, anchorY, boxX, boxY, boxWidth, boxHeight, pointerSize) {
+  if (pointerSize <= 0 || !state.labelPointerShow) {
+    return;
+  }
+
+  const halfBase = pointerSize * 0.6;
+  ctx.beginPath();
+
+  if (placement === "above") {
+    const cx = boxX + boxWidth / 2;
+    ctx.moveTo(cx - halfBase, boxY + boxHeight);
+    ctx.lineTo(cx + halfBase, boxY + boxHeight);
+    ctx.lineTo(anchorX, anchorY);
+  } else if (placement === "below") {
+    const cx = boxX + boxWidth / 2;
+    ctx.moveTo(cx - halfBase, boxY);
+    ctx.lineTo(cx + halfBase, boxY);
+    ctx.lineTo(anchorX, anchorY);
+  } else if (placement === "left") {
+    const cy = boxY + boxHeight / 2;
+    ctx.moveTo(boxX + boxWidth, cy - halfBase);
+    ctx.lineTo(boxX + boxWidth, cy + halfBase);
+    ctx.lineTo(anchorX, anchorY);
+  } else {
+    const cy = boxY + boxHeight / 2;
+    ctx.moveTo(boxX, cy - halfBase);
+    ctx.lineTo(boxX, cy + halfBase);
+    ctx.lineTo(anchorX, anchorY);
+  }
+
+  ctx.closePath();
+}
+
+function drawPointLabels(ctx, cameraToUse, viewport, stageValue, textScale = 1) {
+  const entries = getPointLabelEntries(stageValue);
+  if (entries.length === 0) {
+    return;
+  }
+
+  const fontSize = Math.max(1, state.labelSize * textScale);
+  const margin = Math.max(0, state.labelMargin * textScale);
+  const pointerOffset = state.labelPointerOffset * textScale;
+  const labelOffset = state.labelOffset * textScale;
+  const padX = Math.max(0, state.labelPaddingX * textScale);
+  const padY = Math.max(0, state.labelPaddingY * textScale);
+  const borderWidth = Math.max(0, state.labelBorderWidth * textScale);
+  const borderRadius = Math.max(0, state.labelBorderRadius * textScale);
+  const pointerSize = state.labelPointerShow ? Math.max(0, state.labelPointerSize * textScale) : 0;
+
+  ctx.save();
+  ctx.font = `${fontSize}px ${state.labelFont}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  const fillStyle = colorToRgbaString(state.labelBoxColor, state.labelBoxOpacity);
+  const borderStyle = colorToRgbaString(state.labelBorderColor, 1);
+  const textStyle = colorToRgbaString(state.labelColor, 1);
+
+  for (const entry of entries) {
+    const projected = worldToCanvasPosition(entry.point, cameraToUse, viewport);
+    if (!projected.onScreen) {
+      continue;
+    }
+
+    const labelText = applyTextTransform(entry.text);
+    const textWidth = ctx.measureText(labelText).width;
+    const boxWidth = textWidth + padX * 2;
+    const boxHeight = fontSize + padY * 2;
+    const stem = pointerSize > 0 ? pointerSize : 0;
+
+    let tipX = projected.x;
+    let tipY = projected.y;
+    const tipShift = margin + pointerOffset;
+    let boxX = projected.x - boxWidth / 2;
+    let boxY = projected.y - stem - boxHeight;
+
+    if (state.labelPlacement === "above") {
+      tipY = projected.y - tipShift;
+      boxY = tipY - stem - boxHeight - labelOffset;
+    } else if (state.labelPlacement === "below") {
+      tipY = projected.y + tipShift;
+      boxY = tipY + stem + labelOffset;
+    } else if (state.labelPlacement === "left") {
+      tipX = projected.x - tipShift;
+      boxX = tipX - stem - boxWidth - labelOffset;
+      boxY = projected.y - boxHeight / 2;
+    } else {
+      tipX = projected.x + tipShift;
+      boxX = tipX + stem + labelOffset;
+      boxY = projected.y - boxHeight / 2;
+    }
+
+    drawPointerPath(ctx, state.labelPlacement, tipX, tipY, boxX, boxY, boxWidth, boxHeight, pointerSize);
+    if (pointerSize > 0) {
+      ctx.fillStyle = fillStyle;
+      ctx.fill();
+      if (borderWidth > 0) {
+        ctx.strokeStyle = borderStyle;
+        ctx.lineWidth = borderWidth;
+        ctx.stroke();
+      }
+    }
+
+    roundedRectPath(ctx, boxX, boxY, boxWidth, boxHeight, borderRadius);
+    ctx.fillStyle = fillStyle;
+    ctx.fill();
+    if (borderWidth > 0) {
+      ctx.strokeStyle = borderStyle;
+      ctx.lineWidth = borderWidth;
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = textStyle;
+    ctx.fillText(labelText, boxX + boxWidth / 2, boxY + boxHeight / 2);
+  }
+
+  ctx.restore();
+}
+
+function renderSinglePointLabelsOverlay() {
+  const width = Math.max(1, canvas.clientWidth);
+  const height = Math.max(1, canvas.clientHeight);
+  ensureOverlayCanvasSize(width, height);
+  gridBorderCtx.clearRect(0, 0, width, height);
+
+  drawPointLabels(
+    gridBorderCtx,
+    camera,
+    { x: 0, y: 0, width, height },
+    state.animatedStage,
+    1
+  );
+}
+
+function drawGridPointLabels(ctx, layout, textScale = 1) {
+  for (let i = 0; i < layout.cells.length; i += 1) {
+    const cell = layout.cells[i];
+    const stageValue = i + 1;
+    const cellAspect = Math.max(1, cell.width) / Math.max(1, cell.height);
+    const viewOverride = getGridCellViewOverride(i);
+    const tempCamera = createRenderCameraForAspect(cellAspect, viewOverride);
+    drawPointLabels(
+      ctx,
+      tempCamera,
+      { x: cell.x, y: cell.y, width: Math.max(1, cell.width), height: Math.max(1, cell.height) },
+      stageValue,
+      textScale
+    );
+  }
+}
+
 function renderGridView() {
   const width = Math.max(1, canvas.clientWidth);
   const height = Math.max(1, canvas.clientHeight);
@@ -1474,6 +2005,10 @@ function renderGridView() {
   const savedTargetStage = state.targetStage;
   const savedAnimatedStage = state.animatedStage;
 
+  if (shouldUsePerCellCamera() || shouldUsePerCellZoom()) {
+    ensureGridCellViews();
+  }
+
   for (let i = 0; i < layout.cells.length; i += 1) {
     const cell = layout.cells[i];
     const drawWidth = Math.max(1, cell.width);
@@ -1486,7 +2021,8 @@ function renderGridView() {
     renderer.setScissorTest(true);
 
     const cellAspect = drawWidth / Math.max(1, drawHeight);
-    const tempCamera = createRenderCameraForAspect(cellAspect);
+    const viewOverride = getGridCellViewOverride(i);
+    const tempCamera = createRenderCameraForAspect(cellAspect, viewOverride);
 
     state.targetStage = i + 1;
     state.animatedStage = i + 1;
@@ -1517,6 +2053,8 @@ function renderGridView() {
   if ((state.gridNumberShow || state.gridLabelShow) && state.stageCount > 0) {
     drawGridTextAnnotations(gridBorderCtx, layout, 1);
   }
+
+  drawGridPointLabels(gridBorderCtx, layout, 1);
 }
 
 function updateSceneWrapHeightForGridMode() {
@@ -1554,10 +2092,16 @@ function animate() {
   updateScene();
   controls.update();
 
+  if (state.displayMode === "grid" && (!state.gridSyncCellCameras || !state.gridSyncCellZoom)) {
+    ensureGridCellViews();
+    saveMainCameraToGridCell(activeGridCameraCell);
+  }
+
   if (state.displayMode === "grid") {
     renderGridView();
   } else {
     renderer.render(scene, camera);
+    renderSinglePointLabelsOverlay();
   }
 
   requestAnimationFrame(animate);
@@ -1613,7 +2157,20 @@ function downloadHiResPng(scale = 3) {
     updateScene();
     renderer.render(scene, tempCamera);
 
-    const dataUrl = renderer.domElement.toDataURL("image/png");
+    const offscreen = document.createElement("canvas");
+    offscreen.width = targetWidth;
+    offscreen.height = targetHeight;
+    const ctx = offscreen.getContext("2d");
+    ctx.drawImage(renderer.domElement, 0, 0);
+    drawPointLabels(
+      ctx,
+      tempCamera,
+      { x: 0, y: 0, width: targetWidth, height: targetHeight },
+      state.animatedStage,
+      scale
+    );
+
+    const dataUrl = offscreen.toDataURL("image/png");
     const link = document.createElement("a");
     link.href = dataUrl;
     link.download = `creative-process-${timestampForFilename()}.png`;
@@ -1666,6 +2223,10 @@ function downloadGridPng(scale = 3) {
 
     const layout = computeGridLayout(targetWidth, targetHeight, 0);
 
+    if (shouldUsePerCellCamera() || shouldUsePerCellZoom()) {
+      ensureGridCellViews();
+    }
+
     const savedTargetStage = state.targetStage;
     const savedAnimatedStage = state.animatedStage;
 
@@ -1681,7 +2242,8 @@ function downloadGridPng(scale = 3) {
       renderer.setScissorTest(true);
 
       const cellAspect = drawWidth / Math.max(1, drawHeight);
-      const tempCamera = createRenderCameraForAspect(cellAspect);
+      const viewOverride = getGridCellViewOverride(i);
+      const tempCamera = createRenderCameraForAspect(cellAspect, viewOverride);
 
       state.targetStage = i + 1;
       state.animatedStage = i + 1;
@@ -1715,6 +2277,8 @@ function downloadGridPng(scale = 3) {
       drawGridTextAnnotations(ctx, layout, scale);
     }
 
+    drawGridPointLabels(ctx, layout, scale);
+
     const dataUrl = offscreen.toDataURL("image/png");
     const link = document.createElement("a");
     link.href = dataUrl;
@@ -1739,30 +2303,12 @@ function bindControls() {
     settingsBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
   };
 
-  settingsBtn.addEventListener("click", (event) => {
-    event.stopPropagation();
-    const isOpen = configPanel.classList.contains("is-open");
-    setConfigPanelOpen(!isOpen);
+  settingsBtn.addEventListener("click", () => {
+    setConfigPanelOpen(true);
   });
 
   closeConfigBtn.addEventListener("click", () => {
     setConfigPanelOpen(false);
-  });
-
-  document.addEventListener("click", (event) => {
-    if (!configPanel.classList.contains("is-open")) {
-      return;
-    }
-    if (configPanel.contains(event.target) || settingsBtn.contains(event.target)) {
-      return;
-    }
-    setConfigPanelOpen(false);
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      setConfigPanelOpen(false);
-    }
   });
 
   downloadPngBtn.addEventListener("click", () => {
@@ -2120,6 +2666,123 @@ function bindControls() {
     updateAxesVisibility();
   });
 
+  const syncLabelTextModeFields = () => {
+    vectorEndLabelTextInput.disabled = state.vectorEndTextMode !== "custom";
+  };
+
+  showDotLabelsInput.addEventListener("change", () => {
+    state.showDotLabels = showDotLabelsInput.checked;
+  });
+
+  showOriginLabelInput.addEventListener("change", () => {
+    state.showOriginLabel = showOriginLabelInput.checked;
+  });
+
+  originLabelTextInput.addEventListener("input", () => {
+    state.originLabelText = originLabelTextInput.value;
+  });
+
+  showVectorEndLabelInput.addEventListener("change", () => {
+    state.showVectorEndLabel = showVectorEndLabelInput.checked;
+  });
+
+  vectorEndLabelTextModeInput.addEventListener("change", () => {
+    state.vectorEndTextMode = vectorEndLabelTextModeInput.value;
+    syncLabelTextModeFields();
+  });
+
+  vectorEndLabelTextInput.addEventListener("input", () => {
+    state.vectorEndText = vectorEndLabelTextInput.value;
+  });
+
+  showInitialVectorEndLabelInput.addEventListener("change", () => {
+    state.showInitialVectorEndLabel = showInitialVectorEndLabelInput.checked;
+  });
+
+  initialVectorEndLabelTextInput.addEventListener("input", () => {
+    state.initialVectorEndText = initialVectorEndLabelTextInput.value;
+  });
+
+  labelFontInput.addEventListener("change", () => {
+    state.labelFont = labelFontInput.value;
+  });
+
+  labelSizeInput.addEventListener("input", () => {
+    state.labelSize = Number(labelSizeInput.value);
+    labelSizeValue.textContent = String(Math.round(state.labelSize));
+  });
+
+  labelColorInput.addEventListener("input", () => {
+    state.labelColor = new THREE.Color(labelColorInput.value);
+  });
+
+  labelTextTransformInput.addEventListener("change", () => {
+    state.labelTextTransform = labelTextTransformInput.value;
+  });
+
+  labelPlacementInput.addEventListener("change", () => {
+    state.labelPlacement = labelPlacementInput.value;
+  });
+
+  labelMarginInput.addEventListener("input", () => {
+    state.labelMargin = Number(labelMarginInput.value);
+    labelMarginValue.textContent = String(Math.round(state.labelMargin));
+  });
+
+  labelPointerOffsetInput.addEventListener("input", () => {
+    state.labelPointerOffset = Number(labelPointerOffsetInput.value);
+    labelPointerOffsetValue.textContent = String(Math.round(state.labelPointerOffset));
+  });
+
+  labelOffsetInput.addEventListener("input", () => {
+    state.labelOffset = Number(labelOffsetInput.value);
+    labelOffsetValue.textContent = String(Math.round(state.labelOffset));
+  });
+
+  labelPaddingXInput.addEventListener("input", () => {
+    state.labelPaddingX = Number(labelPaddingXInput.value);
+    labelPaddingXValue.textContent = String(Math.round(state.labelPaddingX));
+  });
+
+  labelPaddingYInput.addEventListener("input", () => {
+    state.labelPaddingY = Number(labelPaddingYInput.value);
+    labelPaddingYValue.textContent = String(Math.round(state.labelPaddingY));
+  });
+
+  labelBoxColorInput.addEventListener("input", () => {
+    state.labelBoxColor = new THREE.Color(labelBoxColorInput.value);
+  });
+
+  labelBoxOpacityInput.addEventListener("input", () => {
+    state.labelBoxOpacity = Number(labelBoxOpacityInput.value);
+    labelBoxOpacityValue.textContent = state.labelBoxOpacity.toFixed(2);
+  });
+
+  labelBorderColorInput.addEventListener("input", () => {
+    state.labelBorderColor = new THREE.Color(labelBorderColorInput.value);
+  });
+
+  labelBorderWidthInput.addEventListener("input", () => {
+    state.labelBorderWidth = Number(labelBorderWidthInput.value);
+    labelBorderWidthValue.textContent = state.labelBorderWidth.toFixed(1);
+  });
+
+  labelBorderRadiusInput.addEventListener("input", () => {
+    state.labelBorderRadius = Number(labelBorderRadiusInput.value);
+    labelBorderRadiusValue.textContent = String(Math.round(state.labelBorderRadius));
+  });
+
+  labelPointerShowInput.addEventListener("change", () => {
+    state.labelPointerShow = labelPointerShowInput.checked;
+  });
+
+  labelPointerSizeInput.addEventListener("input", () => {
+    state.labelPointerSize = Number(labelPointerSizeInput.value);
+    labelPointerSizeValue.textContent = String(Math.round(state.labelPointerSize));
+  });
+
+  syncLabelTextModeFields();
+
   exportConfigBtn.addEventListener("click", () => {
     configExportArea.value = JSON.stringify(buildConfigSnapshot(), null, 2);
   });
@@ -2160,15 +2823,55 @@ function bindControls() {
     sceneWrap.classList.toggle("grid-mode", state.displayMode === "grid");
     updateSceneWrapHeightForGridMode();
     controls.enabled = true;
+    if (state.displayMode === "grid" && (!state.gridSyncCellCameras || !state.gridSyncCellZoom)) {
+      ensureGridCellViews();
+      applyGridCellViewToMainCamera(activeGridCameraCell);
+    }
     if (state.displayMode !== "grid") {
       gridBorderCtx.clearRect(0, 0, gridBorderOverlay.width, gridBorderOverlay.height);
     }
+    updateGridCameraModeUi();
   });
 
   gridAspectRatioInput.addEventListener("change", () => {
     state.gridAspectRatio = gridAspectRatioInput.value;
     updateSceneWrapHeightForGridMode();
   });
+
+  gridSyncCellCamerasInput.addEventListener("change", () => {
+    state.gridSyncCellCameras = gridSyncCellCamerasInput.checked;
+    ensureGridCellViews();
+    if (state.displayMode === "grid" && !state.gridSyncCellCameras) {
+      applyGridCellViewToMainCamera(activeGridCameraCell);
+    }
+    updateGridCameraModeUi();
+  });
+
+  gridSyncCellZoomInput.addEventListener("change", () => {
+    state.gridSyncCellZoom = gridSyncCellZoomInput.checked;
+    ensureGridCellViews();
+    if (state.gridSyncCellZoom) {
+      for (let i = 0; i < gridCellViews.length; i += 1) {
+        gridCellViews[i].zoom = camera.zoom;
+      }
+    } else if (state.displayMode === "grid") {
+      applyGridCellViewToMainCamera(activeGridCameraCell);
+    }
+    updateGridCameraModeUi();
+  });
+
+  resetGridCellCameraBtn.addEventListener("click", () => {
+    if (state.gridSyncCellCameras) {
+      return;
+    }
+    resetActiveGridCellCamera();
+  });
+
+  canvas.addEventListener("pointerdown", (event) => {
+    selectGridCameraCellFromPointerEvent(event);
+  });
+
+  updateGridCameraModeUi();
 
   gridBorderToggle.addEventListener("change", () => {
     state.gridBorderShow = gridBorderToggle.checked;
@@ -2281,6 +2984,9 @@ function syncControlsFromState() {
   gridOuterMarginValue.textContent = String(Math.round(state.gridOuterMargin));
   gridCellGapInput.value = String(state.gridCellGap);
   gridCellGapValue.textContent = String(Math.round(state.gridCellGap));
+  gridSyncCellCamerasInput.checked = state.gridSyncCellCameras;
+  gridSyncCellZoomInput.checked = state.gridSyncCellZoom;
+  updateGridCameraModeUi();
   gridNumberShowInput.checked = state.gridNumberShow;
   gridNumberFontInput.value = state.gridNumberFont;
   gridNumberColorInput.value = `#${state.gridNumberColor.getHexString()}`;
@@ -2368,6 +3074,33 @@ function syncControlsFromState() {
   dotOutlineColorInput.value = `#${state.dotOutlineColor.getHexString()}`;
   dotOutlineThicknessInput.value = String(state.dotOutlineThickness);
 
+  showDotLabelsInput.checked = state.showDotLabels;
+  showOriginLabelInput.checked = state.showOriginLabel;
+  originLabelTextInput.value = state.originLabelText;
+  showVectorEndLabelInput.checked = state.showVectorEndLabel;
+  vectorEndLabelTextModeInput.value = state.vectorEndTextMode;
+  vectorEndLabelTextInput.value = state.vectorEndText;
+  vectorEndLabelTextInput.disabled = state.vectorEndTextMode !== "custom";
+  showInitialVectorEndLabelInput.checked = state.showInitialVectorEndLabel;
+  initialVectorEndLabelTextInput.value = state.initialVectorEndText;
+  labelFontInput.value = state.labelFont;
+  labelSizeInput.value = String(state.labelSize);
+  labelColorInput.value = `#${state.labelColor.getHexString()}`;
+  labelTextTransformInput.value = state.labelTextTransform;
+  labelPlacementInput.value = state.labelPlacement;
+  labelMarginInput.value = String(state.labelMargin);
+  labelPointerOffsetInput.value = String(state.labelPointerOffset);
+  labelOffsetInput.value = String(state.labelOffset);
+  labelPaddingXInput.value = String(state.labelPaddingX);
+  labelPaddingYInput.value = String(state.labelPaddingY);
+  labelBoxColorInput.value = `#${state.labelBoxColor.getHexString()}`;
+  labelBoxOpacityInput.value = String(state.labelBoxOpacity);
+  labelBorderColorInput.value = `#${state.labelBorderColor.getHexString()}`;
+  labelBorderWidthInput.value = String(state.labelBorderWidth);
+  labelBorderRadiusInput.value = String(state.labelBorderRadius);
+  labelPointerShowInput.checked = state.labelPointerShow;
+  labelPointerSizeInput.value = String(state.labelPointerSize);
+
   showAxesToggle.checked = state.showAxes;
   axisColorInput.value = `#${state.axisColor.getHexString()}`;
   axisLengthInput.value = String(state.axisLength);
@@ -2408,6 +3141,16 @@ function setInitialOutputValues() {
   originDotSizeValue.textContent = state.originDotSize.toFixed(3);
   hitDotSizeValue.textContent = state.hitDotSize.toFixed(3);
   dotOutlineThicknessValue.textContent = state.dotOutlineThickness.toFixed(3);
+  labelSizeValue.textContent = String(Math.round(state.labelSize));
+  labelMarginValue.textContent = String(Math.round(state.labelMargin));
+  labelPointerOffsetValue.textContent = String(Math.round(state.labelPointerOffset));
+  labelOffsetValue.textContent = String(Math.round(state.labelOffset));
+  labelPaddingXValue.textContent = String(Math.round(state.labelPaddingX));
+  labelPaddingYValue.textContent = String(Math.round(state.labelPaddingY));
+  labelBoxOpacityValue.textContent = state.labelBoxOpacity.toFixed(2);
+  labelBorderWidthValue.textContent = state.labelBorderWidth.toFixed(1);
+  labelBorderRadiusValue.textContent = String(Math.round(state.labelBorderRadius));
+  labelPointerSizeValue.textContent = String(Math.round(state.labelPointerSize));
   dirAzimuthValue.textContent = state.dirAzimuth.toFixed(1) + "°";
   dirElevationValue.textContent = state.dirElevation.toFixed(1) + "°";
   axisLengthValue.textContent = state.axisLength.toFixed(2);
@@ -2424,6 +3167,8 @@ function setInitialOutputValues() {
   gridOuterMarginValue.textContent = String(Math.round(state.gridOuterMargin));
   gridCellGapInput.value = String(state.gridCellGap);
   gridCellGapValue.textContent = String(Math.round(state.gridCellGap));
+  gridSyncCellCamerasInput.checked = state.gridSyncCellCameras;
+  gridSyncCellZoomInput.checked = state.gridSyncCellZoom;
   gridNumberShowInput.checked = state.gridNumberShow;
   gridNumberFontInput.value = state.gridNumberFont;
   gridNumberColorInput.value = `#${state.gridNumberColor.getHexString()}`;
@@ -2451,6 +3196,33 @@ function setInitialOutputValues() {
   cameraFovValue.textContent = state.cameraFov.toFixed(0);
   cameraZoomInput.value = String(state.cameraZoom);
   cameraZoomValue.textContent = state.cameraZoom.toFixed(2);
+
+  showDotLabelsInput.checked = state.showDotLabels;
+  showOriginLabelInput.checked = state.showOriginLabel;
+  originLabelTextInput.value = state.originLabelText;
+  showVectorEndLabelInput.checked = state.showVectorEndLabel;
+  vectorEndLabelTextModeInput.value = state.vectorEndTextMode;
+  vectorEndLabelTextInput.value = state.vectorEndText;
+  vectorEndLabelTextInput.disabled = state.vectorEndTextMode !== "custom";
+  showInitialVectorEndLabelInput.checked = state.showInitialVectorEndLabel;
+  initialVectorEndLabelTextInput.value = state.initialVectorEndText;
+  labelFontInput.value = state.labelFont;
+  labelSizeInput.value = String(state.labelSize);
+  labelColorInput.value = `#${state.labelColor.getHexString()}`;
+  labelTextTransformInput.value = state.labelTextTransform;
+  labelPlacementInput.value = state.labelPlacement;
+  labelMarginInput.value = String(state.labelMargin);
+  labelPointerOffsetInput.value = String(state.labelPointerOffset);
+  labelOffsetInput.value = String(state.labelOffset);
+  labelPaddingXInput.value = String(state.labelPaddingX);
+  labelPaddingYInput.value = String(state.labelPaddingY);
+  labelBoxColorInput.value = `#${state.labelBoxColor.getHexString()}`;
+  labelBoxOpacityInput.value = String(state.labelBoxOpacity);
+  labelBorderColorInput.value = `#${state.labelBorderColor.getHexString()}`;
+  labelBorderWidthInput.value = String(state.labelBorderWidth);
+  labelBorderRadiusInput.value = String(state.labelBorderRadius);
+  labelPointerShowInput.checked = state.labelPointerShow;
+  labelPointerSizeInput.value = String(state.labelPointerSize);
 }
 
 window.addEventListener("resize", onResize);
@@ -2473,6 +3245,11 @@ if (loadedCameraPosition) {
 }
 updateCameraType();
 controls.update();
+gridCellViews = parseGridCustomViews(cfg.display?.gridCustomCameras);
+ensureGridCellViews();
+if (state.displayMode === "grid" && (!state.gridSyncCellCameras || !state.gridSyncCellZoom)) {
+  applyGridCellViewToMainCamera(activeGridCameraCell);
+}
 rebuildStageGeometry();
 rebuildAxisMeshes();
 updateAxesVisibility();
