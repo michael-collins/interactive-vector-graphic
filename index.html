@@ -148,7 +148,13 @@
       .config-panel-header {
         @apply flex items-center justify-between px-4 py-2.5 bg-zinc-50 border-b border-zinc-200;
       }
+      .config-panel-heading {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
       .config-panel-title { @apply text-sm font-semibold text-zinc-700; }
+      .config-panel-subtitle { @apply text-[11px] text-zinc-500 m-0; }
       .config-close-btn {
         @apply inline-flex items-center justify-center rounded-md border border-zinc-200 bg-white
                text-[11px] font-medium text-zinc-700 shadow-sm cursor-pointer px-2.5 py-1 transition-colors;
@@ -180,6 +186,57 @@
       .config-group > summary::-webkit-details-marker { display: none; }
       .config-group > summary::after { content: '▼'; @apply text-zinc-300 text-[9px]; }
       .config-group[open] > summary::after { content: '▲'; }
+
+      .config-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px;
+        background: white;
+      }
+      .config-note {
+        @apply text-[11px] leading-5 text-zinc-500 m-0 px-1;
+      }
+      .config-subgroup {
+        @apply rounded-md border border-zinc-100 overflow-hidden bg-zinc-50/60;
+      }
+      .config-subgroup > summary {
+        @apply flex items-center justify-between px-3 py-2 cursor-pointer text-[11px] font-semibold text-zinc-700;
+        list-style: none;
+        user-select: none;
+      }
+      .config-subgroup > summary::-webkit-details-marker { display: none; }
+      .config-subgroup > summary::after { content: '▼'; @apply text-[10px] font-medium text-zinc-400; }
+      .config-subgroup[open] > summary::after { content: '▲'; }
+      .config-subgroup[hidden],
+      .config-group[hidden],
+      .config-toggle-fields[hidden] {
+        display: none !important;
+      }
+      .config-subgroup > .config-grid {
+        border-top: 1px solid rgba(228, 228, 231, 0.7);
+      }
+      .config-section-title {
+        @apply text-[11px] font-semibold text-zinc-700 leading-tight;
+      }
+      .config-section-copy {
+        @apply text-[11px] text-zinc-500 leading-5;
+      }
+      .config-inline-note {
+        grid-column: 1 / -1;
+        @apply text-[10px] font-medium uppercase tracking-wide text-zinc-400;
+      }
+      .config-toggle-fields {
+        grid-column: 1 / -1;
+        min-width: 0;
+      }
+      .config-toggle-fields > .config-grid {
+        padding: 6px 0 0;
+        background: transparent;
+      }
+      .config-full-width {
+        grid-column: 1 / 3;
+      }
 
       /* ── Config grid ─────────────────────────────── */
       .config-grid {
@@ -434,174 +491,221 @@
 
       <aside id="configPanel" class="config-panel" aria-label="Visual settings" aria-hidden="true">
         <div class="config-panel-header">
-          <h2 class="config-panel-title">Visualization Config</h2>
+          <div class="config-panel-heading">
+            <h2 class="config-panel-title">Settings</h2>
+            <p id="configPanelSubtitle" class="config-panel-subtitle">Showing shared scene controls.</p>
+          </div>
           <button id="closeConfigBtn" class="config-close-btn" type="button" aria-label="Close settings">Close</button>
         </div>
         <section class="config-sections" aria-label="Visual settings">
 
           <details class="config-group" open>
-            <summary>Display</summary>
-            <div class="config-grid">
-              <label for="displayMode">View Mode</label>
-              <select id="displayMode">
-                <option value="single" selected>Single</option>
-                <option value="grid">Grid (All Stages)</option>
-              </select>
-              <span></span>
+            <summary>View &amp; Camera</summary>
+            <div class="config-stack">
+              <p class="config-note">Start here. The panel now follows the active view mode, so grid-only controls appear only when the grid is enabled.</p>
 
-              <label for="gridAspectRatio">Grid Aspect</label>
-              <select id="gridAspectRatio">
-                <option value="free" selected>Free (Canvas)</option>
-                <option value="16:9">16 : 9</option>
-                <option value="4:3">4 : 3</option>
-                <option value="3:2">3 : 2</option>
-                <option value="1:1">1 : 1</option>
-                <option value="2:3">2 : 3</option>
-                <option value="9:16">9 : 16</option>
-              </select>
-              <span></span>
+              <details class="config-subgroup" open>
+                <summary>View Mode</summary>
+                <div class="config-grid">
+                  <label for="displayMode">Canvas Mode</label>
+                  <select id="displayMode">
+                    <option value="single" selected>Single Stage</option>
+                    <option value="grid">Grid Overview</option>
+                  </select>
+                  <span></span>
+                </div>
+              </details>
 
-              <label class="toggle" for="gridBorderToggle">
-                <input id="gridBorderToggle" type="checkbox" checked />
-                Grid Border
-              </label>
-              <span></span>
-              <span></span>
+              <details class="config-subgroup" data-mode="grid" open>
+                <summary>Grid Layout</summary>
+                <div class="config-grid">
+                  <label for="gridAspectRatio">Grid Aspect</label>
+                  <select id="gridAspectRatio">
+                    <option value="free" selected>Free (Canvas)</option>
+                    <option value="16:9">16 : 9</option>
+                    <option value="4:3">4 : 3</option>
+                    <option value="3:2">3 : 2</option>
+                    <option value="1:1">1 : 1</option>
+                    <option value="2:3">2 : 3</option>
+                    <option value="9:16">9 : 16</option>
+                  </select>
+                  <span></span>
 
-              <label for="gridBorderColor">Border Color</label>
-              <input id="gridBorderColor" type="color" value="#e4e4e7" />
-              <span></span>
+                  <label class="toggle" for="gridBorderToggle">
+                    <input id="gridBorderToggle" type="checkbox" checked />
+                    Show Cell Borders
+                  </label>
+                  <span></span>
+                  <span></span>
 
-              <label for="gridBorderThickness">Border Width</label>
-              <input id="gridBorderThickness" type="range" min="0.5" max="12" value="1" step="0.5" />
-              <output id="gridBorderThicknessValue" for="gridBorderThickness">1.0</output>
+                  <div class="config-toggle-fields" data-requires="#gridBorderToggle">
+                    <div class="config-grid">
+                      <label for="gridBorderColor">Border Color</label>
+                      <input id="gridBorderColor" type="color" value="#e4e4e7" />
+                      <span></span>
 
-              <label for="gridOuterMargin">Outer Margin</label>
-              <input id="gridOuterMargin" type="range" min="0" max="80" value="0" step="1" />
-              <output id="gridOuterMarginValue" for="gridOuterMargin">0</output>
+                      <label for="gridBorderThickness">Border Width</label>
+                      <input id="gridBorderThickness" type="range" min="0.5" max="12" value="1" step="0.5" />
+                      <output id="gridBorderThicknessValue" for="gridBorderThickness">1.0</output>
+                    </div>
+                  </div>
 
-              <label for="gridCellGap">Cell Gap</label>
-              <input id="gridCellGap" type="range" min="0" max="40" value="0" step="1" />
-              <output id="gridCellGapValue" for="gridCellGap">0</output>
+                  <label for="gridOuterMargin">Outer Margin</label>
+                  <input id="gridOuterMargin" type="range" min="0" max="80" value="0" step="1" />
+                  <output id="gridOuterMarginValue" for="gridOuterMargin">0</output>
 
-              <label class="toggle" for="gridNumberShow">
-                <input id="gridNumberShow" type="checkbox" />
-                Show Stage Number
-              </label>
-              <span></span>
-              <span></span>
+                  <label for="gridCellGap">Cell Gap</label>
+                  <input id="gridCellGap" type="range" min="0" max="40" value="0" step="1" />
+                  <output id="gridCellGapValue" for="gridCellGap">0</output>
+                </div>
+              </details>
 
-              <label for="gridNumberFont">Number Font</label>
-              <select id="gridNumberFont">
-                <option value="Inter, system-ui, sans-serif" selected>Inter</option>
-                <option value="Arial, Helvetica, sans-serif">Arial</option>
-                <option value="Georgia, serif">Georgia</option>
-                <option value="'Courier New', monospace">Courier New</option>
-              </select>
-              <span></span>
+              <details class="config-subgroup" data-mode="grid">
+                <summary>Grid Labels &amp; Numbers</summary>
+                <div class="config-grid">
+                  <label class="toggle" for="gridNumberShow">
+                    <input id="gridNumberShow" type="checkbox" />
+                    Show Stage Numbers
+                  </label>
+                  <span></span>
+                  <span></span>
 
-              <label for="gridNumberColor">Number Color</label>
-              <input id="gridNumberColor" type="color" value="#111827" />
-              <span></span>
+                  <div class="config-toggle-fields" data-requires="#gridNumberShow">
+                    <div class="config-grid">
+                      <div class="config-inline-note">Stage numbers</div>
 
-              <label for="gridNumberSize">Number Size</label>
-              <input id="gridNumberSize" type="range" min="10" max="72" value="24" step="1" />
-              <output id="gridNumberSizeValue" for="gridNumberSize">24</output>
+                      <label for="gridNumberFont">Number Font</label>
+                      <select id="gridNumberFont">
+                        <option value="Inter, system-ui, sans-serif" selected>Inter</option>
+                        <option value="Arial, Helvetica, sans-serif">Arial</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="'Courier New', monospace">Courier New</option>
+                      </select>
+                      <span></span>
 
-              <label for="gridNumberMargin">Number Margin</label>
-              <input id="gridNumberMargin" type="range" min="0" max="40" value="6" step="1" />
-              <output id="gridNumberMarginValue" for="gridNumberMargin">6</output>
+                      <label for="gridNumberColor">Number Color</label>
+                      <input id="gridNumberColor" type="color" value="#111827" />
+                      <span></span>
 
-              <label for="gridNumberPlacement">Number Placement</label>
-              <select id="gridNumberPlacement">
-                <option value="top-left">Top Left</option>
-                <option value="top-middle" selected>Top Middle</option>
-                <option value="top-right">Top Right</option>
-                <option value="bottom-left">Bottom Left</option>
-                <option value="bottom-middle">Bottom Middle</option>
-                <option value="bottom-right">Bottom Right</option>
-              </select>
-              <span></span>
+                      <label for="gridNumberSize">Number Size</label>
+                      <input id="gridNumberSize" type="range" min="10" max="72" value="24" step="1" />
+                      <output id="gridNumberSizeValue" for="gridNumberSize">24</output>
 
-              <label class="toggle" for="gridLabelShow">
-                <input id="gridLabelShow" type="checkbox" />
-                Show Stage Label
-              </label>
-              <span></span>
-              <span></span>
+                      <label for="gridNumberMargin">Number Margin</label>
+                      <input id="gridNumberMargin" type="range" min="0" max="40" value="6" step="1" />
+                      <output id="gridNumberMarginValue" for="gridNumberMargin">6</output>
 
-              <label for="gridLabelFont">Label Font</label>
-              <select id="gridLabelFont">
-                <option value="Inter, system-ui, sans-serif" selected>Inter</option>
-                <option value="Arial, Helvetica, sans-serif">Arial</option>
-                <option value="Georgia, serif">Georgia</option>
-                <option value="'Courier New', monospace">Courier New</option>
-              </select>
-              <span></span>
+                      <label for="gridNumberPlacement">Number Placement</label>
+                      <select id="gridNumberPlacement">
+                        <option value="top-left">Top Left</option>
+                        <option value="top-middle" selected>Top Middle</option>
+                        <option value="top-right">Top Right</option>
+                        <option value="bottom-left">Bottom Left</option>
+                        <option value="bottom-middle">Bottom Middle</option>
+                        <option value="bottom-right">Bottom Right</option>
+                      </select>
+                      <span></span>
+                    </div>
+                  </div>
 
-              <label for="gridLabelColor">Label Color</label>
-              <input id="gridLabelColor" type="color" value="#111827" />
-              <span></span>
+                  <label class="toggle" for="gridLabelShow">
+                    <input id="gridLabelShow" type="checkbox" />
+                    Show Stage Labels
+                  </label>
+                  <span></span>
+                  <span></span>
 
-              <label for="gridLabelSize">Label Size</label>
-              <input id="gridLabelSize" type="range" min="10" max="48" value="16" step="1" />
-              <output id="gridLabelSizeValue" for="gridLabelSize">16</output>
+                  <div class="config-toggle-fields" data-requires="#gridLabelShow">
+                    <div class="config-grid">
+                      <div class="config-inline-note">Stage labels</div>
 
-              <label for="gridLabelMargin">Label Margin</label>
-              <input id="gridLabelMargin" type="range" min="0" max="40" value="6" step="1" />
-              <output id="gridLabelMarginValue" for="gridLabelMargin">6</output>
+                      <label for="gridLabelFont">Label Font</label>
+                      <select id="gridLabelFont">
+                        <option value="Inter, system-ui, sans-serif" selected>Inter</option>
+                        <option value="Arial, Helvetica, sans-serif">Arial</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="'Courier New', monospace">Courier New</option>
+                      </select>
+                      <span></span>
 
-              <label for="gridLabelPlacement">Label Placement</label>
-              <select id="gridLabelPlacement">
-                <option value="top-left">Top Left</option>
-                <option value="top-middle" selected>Top Middle</option>
-                <option value="top-right">Top Right</option>
-                <option value="bottom-left">Bottom Left</option>
-                <option value="bottom-middle">Bottom Middle</option>
-                <option value="bottom-right">Bottom Right</option>
-              </select>
-              <span></span>
+                      <label for="gridLabelColor">Label Color</label>
+                      <input id="gridLabelColor" type="color" value="#111827" />
+                      <span></span>
 
-              <label style="grid-column: 1 / 3; font-weight: 600; color: #374151;">Cell Camera Settings</label>
-              <span></span>
+                      <label for="gridLabelSize">Label Size</label>
+                      <input id="gridLabelSize" type="range" min="10" max="48" value="16" step="1" />
+                      <output id="gridLabelSizeValue" for="gridLabelSize">16</output>
 
-              <label for="gridSyncCellCameras">Sync Cell Orbit</label>
-              <label class="toggle" style="justify-self: start;">
-                <input id="gridSyncCellCameras" type="checkbox" checked />
-                <span>On</span>
-              </label>
+                      <label for="gridLabelMargin">Label Margin</label>
+                      <input id="gridLabelMargin" type="range" min="0" max="40" value="6" step="1" />
+                      <output id="gridLabelMarginValue" for="gridLabelMargin">6</output>
 
-              <label for="gridSyncCellZoom">Sync Cell Zoom</label>
-              <label class="toggle" style="justify-self: start;">
-                <input id="gridSyncCellZoom" type="checkbox" checked />
-                <span>On</span>
-              </label>
+                      <label for="gridLabelPlacement">Label Placement</label>
+                      <select id="gridLabelPlacement">
+                        <option value="top-left">Top Left</option>
+                        <option value="top-middle" selected>Top Middle</option>
+                        <option value="top-right">Top Right</option>
+                        <option value="bottom-left">Bottom Left</option>
+                        <option value="bottom-middle">Bottom Middle</option>
+                        <option value="bottom-right">Bottom Right</option>
+                      </select>
+                      <span></span>
+                    </div>
+                  </div>
+                </div>
+              </details>
 
-              <button id="resetGridCellCameraBtn" type="button" style="grid-column: 1 / 3;">Reset Active Grid Cell Camera</button>
-              <span></span>
+              <details class="config-subgroup" open>
+                <summary>Camera</summary>
+                <div class="config-grid">
+                  <label for="cameraType">Camera Type</label>
+                  <select id="cameraType">
+                    <option value="perspective" selected>Perspective</option>
+                    <option value="orthographic">Orthographic</option>
+                  </select>
+                  <span></span>
 
-              <label for="cameraType">Camera Type</label>
-              <select id="cameraType">
-                <option value="perspective" selected>Perspective</option>
-                <option value="orthographic">Orthographic</option>
-              </select>
-              <span></span>
+                  <label for="cameraFov">Focal Length</label>
+                  <input id="cameraFov" type="range" min="12" max="120" value="48" step="1" />
+                  <output id="cameraFovValue" for="cameraFov">48</output>
 
-              <label for="cameraFov">Focal Length</label>
-              <input id="cameraFov" type="range" min="12" max="120" value="48" step="1" />
-              <output id="cameraFovValue" for="cameraFov">48</output>
+                  <label for="cameraZoom">Zoom (Ortho)</label>
+                  <input id="cameraZoom" type="range" min="0.5" max="5" value="1.5" step="0.1" />
+                  <output id="cameraZoomValue" for="cameraZoom">1.50</output>
 
-              <label for="cameraZoom">Zoom (Ortho)</label>
-              <input id="cameraZoom" type="range" min="0.5" max="5" value="1.5" step="0.1" />
-              <output id="cameraZoomValue" for="cameraZoom">1.50</output>
+                  <button id="resetCameraBtn" class="config-full-width" type="button">Reset to 3/4 View</button>
+                  <span></span>
+                </div>
+              </details>
 
-              <button id="resetCameraBtn" type="button" style="grid-column: 1 / 3;">Reset to 3/4 View</button>
-              <span></span>
+              <details class="config-subgroup" data-mode="grid">
+                <summary>Grid Cell Cameras</summary>
+                <div class="config-grid">
+                  <div class="config-inline-note">These controls only affect the grid overview.</div>
+
+                  <label for="gridSyncCellCameras">Sync Cell Orbit</label>
+                  <label class="toggle" style="justify-self: start;">
+                    <input id="gridSyncCellCameras" type="checkbox" checked />
+                    <span>On</span>
+                  </label>
+                  <span></span>
+
+                  <label for="gridSyncCellZoom">Sync Cell Zoom</label>
+                  <label class="toggle" style="justify-self: start;">
+                    <input id="gridSyncCellZoom" type="checkbox" checked />
+                    <span>On</span>
+                  </label>
+                  <span></span>
+
+                  <button id="resetGridCellCameraBtn" class="config-full-width" type="button">Reset Active Grid Cell Camera</button>
+                  <span></span>
+                </div>
+              </details>
             </div>
           </details>
 
           <details class="config-group" open>
-            <summary>Flow</summary>
+            <summary>Stages &amp; Randomness</summary>
             <div class="config-grid">
               <label>Stage Count</label>
               <span></span>
@@ -624,452 +728,570 @@
           </details>
 
           <details class="config-group">
-            <summary>Cones &amp; Spheres</summary>
-            <div class="config-grid">
-              <label for="coneRange">Cone of Possibility</label>
-              <input id="coneRange" type="range" min="1" max="89.5" value="35" step="0.5" />
-              <output id="coneValue" for="coneRange">35°</output>
+            <summary>Cones &amp; Surfaces</summary>
+            <div class="config-stack">
+              <details class="config-subgroup" open>
+                <summary>Cone Geometry</summary>
+                <div class="config-grid">
+                  <label for="coneRange">Cone of Possibility</label>
+                  <input id="coneRange" type="range" min="1" max="89.5" value="35" step="0.5" />
+                  <output id="coneValue" for="coneRange">35°</output>
 
-              <label for="coneRatio">Cone Stage Ratio</label>
-              <input id="coneRatio" type="range" min="0.5" max="1" value="0.53" step="0.01" />
-              <output id="coneRatioValue" for="coneRatio">0.53</output>
+                  <label for="coneRatio">Cone Stage Ratio</label>
+                  <input id="coneRatio" type="range" min="0.5" max="1" value="0.53" step="0.01" />
+                  <output id="coneRatioValue" for="coneRatio">0.53</output>
 
-              <label for="coneExtension">Cone Extension</label>
-              <input id="coneExtension" type="range" min="0" max="1.5" value="0" step="0.01" />
-              <output id="coneExtensionValue" for="coneExtension">0.00</output>
+                  <label for="coneExtension">Cone Extension</label>
+                  <input id="coneExtension" type="range" min="0" max="1.5" value="0" step="0.01" />
+                  <output id="coneExtensionValue" for="coneExtension">0.00</output>
 
-              <label class="toggle" for="showCones">
-                <input id="showCones" type="checkbox" checked />
-                Show Shaded Cone History
-              </label>
-              <span></span>
-              <span></span>
+                  <label class="toggle" for="showCones">
+                    <input id="showCones" type="checkbox" checked />
+                    Show Shaded Cone History
+                  </label>
+                  <span></span>
+                  <span></span>
 
-              <label for="coneOriginMode">Cone Origin</label>
-              <select id="coneOriginMode">
-                <option value="world" selected>World Origin</option>
-                <option value="dot">Previous Dot</option>
-              </select>
-              <span></span>
+                  <label for="coneOriginMode">Cone Origin</label>
+                  <select id="coneOriginMode">
+                    <option value="world" selected>World Origin</option>
+                    <option value="dot">Previous Dot</option>
+                  </select>
+                  <span></span>
 
-              <label class="toggle" for="angleLimiter">
-                <input id="angleLimiter" type="checkbox" checked />
-                Contain in Previous Cone
-              </label>
-              <span></span>
-              <span></span>
+                  <label class="toggle" for="angleLimiter">
+                    <input id="angleLimiter" type="checkbox" checked />
+                    Contain in Previous Cone
+                  </label>
+                  <span></span>
+                  <span></span>
+                </div>
+              </details>
 
-              <label class="toggle" for="showSpheres">
-                <input id="showSpheres" type="checkbox" checked />
-                Show Spheres
-              </label>
-              <span></span>
-              <span></span>
+              <details class="config-subgroup" open>
+                <summary>Sphere Surfaces</summary>
+                <div class="config-grid">
+                  <label class="toggle" for="showSpheres">
+                    <input id="showSpheres" type="checkbox" checked />
+                    Show Spheres
+                  </label>
+                  <span></span>
+                  <span></span>
 
-              <label for="shaderMode">Sphere Shader</label>
-              <select id="shaderMode">
-                <option value="current">Current</option>
-                <option value="flat">Flat (Unlit Solid)</option>
-                <option value="toon" selected>Toon</option>
-                <option value="matte">Matte</option>
-                <option value="wireframe">Wireframe</option>
-                <option value="normal">Normal Debug</option>
-              </select>
-              <span></span>
+                  <label for="shaderMode">Sphere Shader</label>
+                  <select id="shaderMode">
+                    <option value="current">Current</option>
+                    <option value="flat">Flat (Unlit Solid)</option>
+                    <option value="toon" selected>Toon</option>
+                    <option value="matte">Matte</option>
+                    <option value="wireframe">Wireframe</option>
+                    <option value="normal">Normal Debug</option>
+                  </select>
+                  <span></span>
 
-              <label class="toggle" for="showToonOutline">
-                <input id="showToonOutline" type="checkbox" checked />
-                Sphere Outlines
-              </label>
-              <label for="toonOutlineColor">Outline Color</label>
-              <input id="toonOutlineColor" type="color" value="#292929" />
+                  <label for="sphereOpacity">Sphere Transparency</label>
+                  <input id="sphereOpacity" type="range" min="0.02" max="1" value="0.2" step="0.01" />
+                  <output id="sphereOpacityValue" for="sphereOpacity">0.20</output>
 
-              <label class="toggle" for="toonOutlineXray">
-                <input id="toonOutlineXray" type="checkbox" />
-                Outline X-Ray
-              </label>
-              <span></span>
-              <span></span>
+                  <label for="sphereColor1">Stage Sphere Colors</label>
+                  <div id="stageColorList" class="color-row"></div>
+                  <span></span>
 
-              <label for="toonOutlineThickness">Outline Thickness</label>
-              <input id="toonOutlineThickness" type="range" min="0.002" max="0.08" value="0.01" step="0.002" />
-              <output id="toonOutlineThicknessValue" for="toonOutlineThickness">0.010</output>
+                  <label class="toggle" for="showToonOutline">
+                    <input id="showToonOutline" type="checkbox" checked />
+                    Sphere Outlines
+                  </label>
+                  <span></span>
+                  <span></span>
 
-              <label class="toggle" for="toonOutlineDashed">
-                <input id="toonOutlineDashed" type="checkbox" />
-                Dashed Outline
-              </label>
-              <span></span>
-              <span></span>
+                  <div class="config-toggle-fields" data-requires="#showToonOutline">
+                    <div class="config-grid">
+                      <label for="toonOutlineColor">Outline Color</label>
+                      <input id="toonOutlineColor" type="color" value="#292929" />
+                      <span></span>
 
-              <label for="toonOutlineDashLength">Dash Length</label>
-              <input id="toonOutlineDashLength" type="range" min="0.05" max="0.95" value="0.5" step="0.05" />
-              <output id="toonOutlineDashLengthValue" for="toonOutlineDashLength">0.50</output>
+                      <label for="toonOutlineThickness">Outline Thickness</label>
+                      <input id="toonOutlineThickness" type="range" min="0.002" max="0.08" value="0.01" step="0.002" />
+                      <output id="toonOutlineThicknessValue" for="toonOutlineThickness">0.010</output>
 
-              <label for="toonOutlineDashGap">Dash Gap</label>
-              <input id="toonOutlineDashGap" type="range" min="0.05" max="0.95" value="0.35" step="0.05" />
-              <output id="toonOutlineDashGapValue" for="toonOutlineDashGap">0.35</output>
+                      <label class="toggle" for="toonOutlineXray">
+                        <input id="toonOutlineXray" type="checkbox" />
+                        Outline X-Ray
+                      </label>
+                      <span></span>
+                      <span></span>
 
-              <label for="toonOutlineDashRepeat">Dash Repeat</label>
-              <input id="toonOutlineDashRepeat" type="range" min="4" max="48" value="16" step="1" />
-              <output id="toonOutlineDashRepeatValue" for="toonOutlineDashRepeat">16</output>
+                      <label class="toggle" for="toonOutlineDashed">
+                        <input id="toonOutlineDashed" type="checkbox" />
+                        Dashed Outline
+                      </label>
+                      <span></span>
+                      <span></span>
 
-              <label for="sphereOpacity">Sphere Transparency</label>
-              <input id="sphereOpacity" type="range" min="0.02" max="1" value="0.2" step="0.01" />
-              <output id="sphereOpacityValue" for="sphereOpacity">0.20</output>
+                      <div class="config-toggle-fields" data-requires="#toonOutlineDashed">
+                        <div class="config-grid">
+                          <label for="toonOutlineDashLength">Dash Length</label>
+                          <input id="toonOutlineDashLength" type="range" min="0.05" max="0.95" value="0.5" step="0.05" />
+                          <output id="toonOutlineDashLengthValue" for="toonOutlineDashLength">0.50</output>
 
-              <label for="sphereColor1">Stage Sphere Colors</label>
-              <div id="stageColorList" class="color-row"></div>
-              <span></span>
+                          <label for="toonOutlineDashGap">Dash Gap</label>
+                          <input id="toonOutlineDashGap" type="range" min="0.05" max="0.95" value="0.35" step="0.05" />
+                          <output id="toonOutlineDashGapValue" for="toonOutlineDashGap">0.35</output>
 
-              <label for="coneShaderMode">Cone Shader</label>
-              <select id="coneShaderMode">
-                <option value="flat" selected>Flat</option>
-                <option value="solid">Solid</option>
-                <option value="wireframe">Wireframe</option>
-              </select>
-              <span></span>
+                          <label for="toonOutlineDashRepeat">Dash Repeat</label>
+                          <input id="toonOutlineDashRepeat" type="range" min="4" max="48" value="16" step="1" />
+                          <output id="toonOutlineDashRepeatValue" for="toonOutlineDashRepeat">16</output>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </details>
 
-              <label for="coneColor">Cone Color</label>
-              <input id="coneColor" type="color" value="#ffb454" />
-              <span></span>
+              <details class="config-subgroup">
+                <summary>Cone Materials &amp; Rings</summary>
+                <div class="config-grid">
+                  <label for="coneShaderMode">Cone Shader</label>
+                  <select id="coneShaderMode">
+                    <option value="flat" selected>Flat</option>
+                    <option value="solid">Solid</option>
+                    <option value="wireframe">Wireframe</option>
+                  </select>
+                  <span></span>
 
-              <label for="coneActiveOpacity">Active Opacity</label>
-              <input id="coneActiveOpacity" type="range" min="0.02" max="1" value="1" step="0.01" />
-              <output id="coneActiveOpacityValue" for="coneActiveOpacity">1.00</output>
+                  <label for="coneColor">Cone Color</label>
+                  <input id="coneColor" type="color" value="#ffb454" />
+                  <span></span>
 
-              <label for="coneInactiveOpacity">Inactive Opacity</label>
-              <input id="coneInactiveOpacity" type="range" min="0" max="1" value="0.22" step="0.01" />
-              <output id="coneInactiveOpacityValue" for="coneInactiveOpacity">0.22</output>
+                  <label for="coneActiveOpacity">Active Opacity</label>
+                  <input id="coneActiveOpacity" type="range" min="0.02" max="1" value="1" step="0.01" />
+                  <output id="coneActiveOpacityValue" for="coneActiveOpacity">1.00</output>
 
-              <label class="toggle" for="showIntersection">
-                <input id="showIntersection" type="checkbox" checked />
-                Show Intersection Ring
-              </label>
-              <span></span>
-              <span></span>
+                  <label for="coneInactiveOpacity">Inactive Opacity</label>
+                  <input id="coneInactiveOpacity" type="range" min="0" max="1" value="0.22" step="0.01" />
+                  <output id="coneInactiveOpacityValue" for="coneInactiveOpacity">0.22</output>
 
-              <label for="intersectionColor">Intersection Color</label>
-              <input id="intersectionColor" type="color" value="#5c5c5c" />
-              <span></span>
+                  <label class="toggle" for="showIntersection">
+                    <input id="showIntersection" type="checkbox" checked />
+                    Show Intersection Ring
+                  </label>
+                  <span></span>
+                  <span></span>
 
-              <label for="intersectionWidth">Intersection Width</label>
-              <input id="intersectionWidth" type="range" min="0.004" max="0.08" value="0.004" step="0.002" />
-              <output id="intersectionWidthValue" for="intersectionWidth">0.004</output>
+                  <div class="config-toggle-fields" data-requires="#showIntersection">
+                    <div class="config-grid">
+                      <label for="intersectionColor">Intersection Color</label>
+                      <input id="intersectionColor" type="color" value="#5c5c5c" />
+                      <span></span>
 
-              <label class="toggle" for="showInitialIntersection">
-                <input id="showInitialIntersection" type="checkbox" checked />
-                Show Initial Cone on Outermost Sphere
-              </label>
-              <span></span>
-              <span></span>
+                      <label for="intersectionWidth">Intersection Width</label>
+                      <input id="intersectionWidth" type="range" min="0.004" max="0.08" value="0.004" step="0.002" />
+                      <output id="intersectionWidthValue" for="intersectionWidth">0.004</output>
+                    </div>
+                  </div>
 
-              <label for="initialIntersectionColor">Initial Intersection Color</label>
-              <input id="initialIntersectionColor" type="color" value="#9c9c9c" />
-              <span></span>
+                  <label class="toggle" for="showInitialIntersection">
+                    <input id="showInitialIntersection" type="checkbox" checked />
+                    Show Initial Cone on Outermost Sphere
+                  </label>
+                  <span></span>
+                  <span></span>
 
-              <label for="initialIntersectionWidth">Initial Intersection Width</label>
-              <input id="initialIntersectionWidth" type="range" min="0.004" max="0.08" value="0.004" step="0.002" />
-              <output id="initialIntersectionWidthValue" for="initialIntersectionWidth">0.004</output>
+                  <div class="config-toggle-fields" data-requires="#showInitialIntersection">
+                    <div class="config-grid">
+                      <label for="initialIntersectionColor">Initial Intersection Color</label>
+                      <input id="initialIntersectionColor" type="color" value="#9c9c9c" />
+                      <span></span>
+
+                      <label for="initialIntersectionWidth">Initial Intersection Width</label>
+                      <input id="initialIntersectionWidth" type="range" min="0.004" max="0.08" value="0.004" step="0.002" />
+                      <output id="initialIntersectionWidthValue" for="initialIntersectionWidth">0.004</output>
+                    </div>
+                  </div>
+                </div>
+              </details>
             </div>
           </details>
 
           <details class="config-group">
-            <summary>Base Direction</summary>
-            <div class="config-grid">
-              <label for="dirAzimuth">Azimuth</label>
-              <input id="dirAzimuth" type="range" min="-180" max="180" value="14.5" step="0.5" />
-              <output id="dirAzimuthValue" for="dirAzimuth">14.5°</output>
+            <summary>Direction, Vectors &amp; Connectors</summary>
+            <div class="config-stack">
+              <details class="config-subgroup" open>
+                <summary>Base Direction</summary>
+                <div class="config-grid">
+                  <label for="dirAzimuth">Azimuth</label>
+                  <input id="dirAzimuth" type="range" min="-180" max="180" value="14.5" step="0.5" />
+                  <output id="dirAzimuthValue" for="dirAzimuth">14.5°</output>
 
-              <label for="dirElevation">Elevation</label>
-              <input id="dirElevation" type="range" min="-89.5" max="89.5" value="50" step="0.5" />
-              <output id="dirElevationValue" for="dirElevation">50.0°</output>
+                  <label for="dirElevation">Elevation</label>
+                  <input id="dirElevation" type="range" min="-89.5" max="89.5" value="50" step="0.5" />
+                  <output id="dirElevationValue" for="dirElevation">50.0°</output>
+                </div>
+              </details>
+
+              <details class="config-subgroup" open>
+                <summary>Main Vector</summary>
+                <div class="config-grid">
+                  <label class="toggle" for="showArrow">
+                    <input id="showArrow" type="checkbox" checked />
+                    Show Arrow
+                  </label>
+                  <span></span>
+                  <span></span>
+
+                  <div class="config-toggle-fields" data-requires="#showArrow">
+                    <div class="config-grid">
+                      <label for="arrowColor">Arrow Color</label>
+                      <input id="arrowColor" type="color" value="#000000" />
+                      <span></span>
+
+                      <label for="arrowThickness">Arrow Thickness</label>
+                      <input id="arrowThickness" type="range" min="0.004" max="0.08" value="0.006" step="0.002" />
+                      <output id="arrowThicknessValue" for="arrowThickness">0.006</output>
+
+                      <label for="arrowExtension">Arrow Extension</label>
+                      <input id="arrowExtension" type="range" min="-0.5" max="1.5" value="0.3" step="0.05" />
+                      <output id="arrowExtensionValue" for="arrowExtension">0.30</output>
+
+                      <label for="arrowHeadLength">Arrow Head Length</label>
+                      <input id="arrowHeadLength" type="range" min="0.08" max="0.7" value="0.25" step="0.01" />
+                      <output id="arrowHeadLengthValue" for="arrowHeadLength">0.25</output>
+
+                      <label for="arrowHeadWidth">Arrow Head Width</label>
+                      <input id="arrowHeadWidth" type="range" min="0.05" max="0.5" value="0.13" step="0.01" />
+                      <output id="arrowHeadWidthValue" for="arrowHeadWidth">0.13</output>
+
+                      <label for="arrowOpacity">Arrow Opacity</label>
+                      <input id="arrowOpacity" type="range" min="0.05" max="1" value="1" step="0.01" />
+                      <output id="arrowOpacityValue" for="arrowOpacity">1.00</output>
+                    </div>
+                  </div>
+                </div>
+              </details>
+
+              <details class="config-subgroup">
+                <summary>Initial Vector</summary>
+                <div class="config-grid">
+                  <label class="toggle" for="showInitialArrow">
+                    <input id="showInitialArrow" type="checkbox" checked />
+                    Show Initial Cone Arrow
+                  </label>
+                  <span></span>
+                  <span></span>
+
+                  <div class="config-toggle-fields" data-requires="#showInitialArrow">
+                    <div class="config-grid">
+                      <label for="initialArrowColor">Initial Arrow Color</label>
+                      <input id="initialArrowColor" type="color" value="#9c9c9c" />
+                      <span></span>
+
+                      <label for="initialArrowThickness">Initial Arrow Thickness</label>
+                      <input id="initialArrowThickness" type="range" min="0.004" max="0.08" value="0.006" step="0.002" />
+                      <output id="initialArrowThicknessValue" for="initialArrowThickness">0.006</output>
+
+                      <label for="initialArrowExtension">Initial Arrow Extension</label>
+                      <input id="initialArrowExtension" type="range" min="-0.5" max="1.5" value="0.25" step="0.05" />
+                      <output id="initialArrowExtensionValue" for="initialArrowExtension">0.25</output>
+
+                      <label for="initialArrowHeadLength">Initial Arrow Head Length</label>
+                      <input id="initialArrowHeadLength" type="range" min="0.08" max="0.7" value="0.2" step="0.01" />
+                      <output id="initialArrowHeadLengthValue" for="initialArrowHeadLength">0.20</output>
+
+                      <label for="initialArrowHeadWidth">Initial Arrow Head Width</label>
+                      <input id="initialArrowHeadWidth" type="range" min="0.05" max="0.5" value="0.11" step="0.01" />
+                      <output id="initialArrowHeadWidthValue" for="initialArrowHeadWidth">0.11</output>
+
+                      <label for="initialArrowOpacity">Initial Arrow Opacity</label>
+                      <input id="initialArrowOpacity" type="range" min="0.05" max="1" value="1" step="0.01" />
+                      <output id="initialArrowOpacityValue" for="initialArrowOpacity">1.00</output>
+                    </div>
+                  </div>
+                </div>
+              </details>
+
+              <details class="config-subgroup">
+                <summary>Connectors</summary>
+                <div class="config-grid">
+                  <label class="toggle" for="showConnectors">
+                    <input id="showConnectors" type="checkbox" checked />
+                    Show Connector Edges
+                  </label>
+                  <span></span>
+                  <span></span>
+
+                  <div class="config-toggle-fields" data-requires="#showConnectors">
+                    <div class="config-grid">
+                      <label for="connectorColor">Connector Edge Color</label>
+                      <input id="connectorColor" type="color" value="#000000" />
+                      <span></span>
+
+                      <label for="connectorOpacity">Connector Opacity</label>
+                      <input id="connectorOpacity" type="range" min="0.05" max="1" value="0.95" step="0.01" />
+                      <output id="connectorOpacityValue" for="connectorOpacity">0.95</output>
+
+                      <label for="connectorThickness">Connector Thickness</label>
+                      <input id="connectorThickness" type="range" min="0.004" max="0.08" value="0.014" step="0.002" />
+                      <output id="connectorThicknessValue" for="connectorThickness">0.014</output>
+                    </div>
+                  </div>
+                </div>
+              </details>
             </div>
           </details>
 
           <details class="config-group">
-            <summary>Vector &amp; Connectors</summary>
-            <div class="config-grid">
-              <label class="toggle" for="showArrow">
-                <input id="showArrow" type="checkbox" checked />
-                Show Arrow
-              </label>
-              <span></span>
-              <span></span>
+            <summary>Guides &amp; Labels</summary>
+            <div class="config-stack">
+              <details class="config-subgroup" open>
+                <summary>Dots</summary>
+                <div class="config-grid">
+                  <label for="originDotColor">Origin Dot Color</label>
+                  <input id="originDotColor" type="color" value="#000000" />
+                  <span></span>
 
-              <label for="arrowColor">Arrow Color</label>
-              <input id="arrowColor" type="color" value="#000000" />
-              <span></span>
+                  <label for="originDotSize">Origin Dot Size</label>
+                  <input id="originDotSize" type="range" min="0.02" max="0.2" value="0.075" step="0.005" />
+                  <output id="originDotSizeValue" for="originDotSize">0.075</output>
 
-              <label for="arrowThickness">Arrow Thickness</label>
-              <input id="arrowThickness" type="range" min="0.004" max="0.08" value="0.006" step="0.002" />
-              <output id="arrowThicknessValue" for="arrowThickness">0.006</output>
+                  <label for="hitDotColor">Hit Dot Color</label>
+                  <input id="hitDotColor" type="color" value="#ffffff" />
+                  <span></span>
 
-              <label for="arrowExtension">Arrow Extension</label>
-              <input id="arrowExtension" type="range" min="-0.5" max="1.5" value="0.3" step="0.05" />
-              <output id="arrowExtensionValue" for="arrowExtension">0.30</output>
+                  <label for="hitDotSize">Hit Dot Size</label>
+                  <input id="hitDotSize" type="range" min="0.02" max="0.2" value="0.07" step="0.005" />
+                  <output id="hitDotSizeValue" for="hitDotSize">0.070</output>
 
-              <label for="arrowHeadLength">Arrow Head Length</label>
-              <input id="arrowHeadLength" type="range" min="0.08" max="0.7" value="0.25" step="0.01" />
-              <output id="arrowHeadLengthValue" for="arrowHeadLength">0.25</output>
+                  <label class="toggle" for="showDotOutline">
+                    <input id="showDotOutline" type="checkbox" checked />
+                    Show Dot Outlines
+                  </label>
+                  <span></span>
+                  <span></span>
 
-              <label for="arrowHeadWidth">Arrow Head Width</label>
-              <input id="arrowHeadWidth" type="range" min="0.05" max="0.5" value="0.13" step="0.01" />
-              <output id="arrowHeadWidthValue" for="arrowHeadWidth">0.13</output>
+                  <div class="config-toggle-fields" data-requires="#showDotOutline">
+                    <div class="config-grid">
+                      <label for="dotOutlineColor">Dot Outline Color</label>
+                      <input id="dotOutlineColor" type="color" value="#1b2c3a" />
+                      <span></span>
 
-              <label for="arrowOpacity">Arrow Opacity</label>
-              <input id="arrowOpacity" type="range" min="0.05" max="1" value="1" step="0.01" />
-              <output id="arrowOpacityValue" for="arrowOpacity">1.00</output>
+                      <label for="dotOutlineThickness">Dot Outline Thickness</label>
+                      <input id="dotOutlineThickness" type="range" min="0" max="0.15" value="0.025" step="0.005" />
+                      <output id="dotOutlineThicknessValue" for="dotOutlineThickness">0.025</output>
+                    </div>
+                  </div>
+                </div>
+              </details>
 
-              <label class="toggle" for="showInitialArrow">
-                <input id="showInitialArrow" type="checkbox" checked />
-                Show Initial Cone Arrow
-              </label>
-              <span></span>
-              <span></span>
+              <details class="config-subgroup">
+                <summary>Axes &amp; Atmosphere</summary>
+                <div class="config-grid">
+                  <label class="toggle" for="showAxes">
+                    <input id="showAxes" type="checkbox" checked />
+                    Show Axis Lines
+                  </label>
+                  <span></span>
+                  <span></span>
 
-              <label for="initialArrowColor">Initial Arrow Color</label>
-              <input id="initialArrowColor" type="color" value="#9c9c9c" />
-              <span></span>
+                  <div class="config-toggle-fields" data-requires="#showAxes">
+                    <div class="config-grid">
+                      <label for="axisColor">Axis Color</label>
+                      <input id="axisColor" type="color" value="#cfcfcf" />
+                      <span></span>
 
-              <label for="initialArrowThickness">Initial Arrow Thickness</label>
-              <input id="initialArrowThickness" type="range" min="0.004" max="0.08" value="0.006" step="0.002" />
-              <output id="initialArrowThicknessValue" for="initialArrowThickness">0.006</output>
+                      <label for="axisLength">Axis Length</label>
+                      <input id="axisLength" type="range" min="1" max="12" value="2.75" step="0.25" />
+                      <output id="axisLengthValue" for="axisLength">2.75</output>
 
-              <label for="initialArrowExtension">Initial Arrow Extension</label>
-              <input id="initialArrowExtension" type="range" min="-0.5" max="1.5" value="0.25" step="0.05" />
-              <output id="initialArrowExtensionValue" for="initialArrowExtension">0.25</output>
+                      <label for="axisThickness">Axis Thickness</label>
+                      <input id="axisThickness" type="range" min="0.003" max="0.08" value="0.015" step="0.002" />
+                      <output id="axisThicknessValue" for="axisThickness">0.015</output>
+                    </div>
+                  </div>
 
-              <label for="initialArrowHeadLength">Initial Arrow Head Length</label>
-              <input id="initialArrowHeadLength" type="range" min="0.08" max="0.7" value="0.2" step="0.01" />
-              <output id="initialArrowHeadLengthValue" for="initialArrowHeadLength">0.20</output>
+                  <label class="toggle" for="showFog">
+                    <input id="showFog" type="checkbox" />
+                    Enable Fog
+                  </label>
+                  <span></span>
+                  <span></span>
 
-              <label for="initialArrowHeadWidth">Initial Arrow Head Width</label>
-              <input id="initialArrowHeadWidth" type="range" min="0.05" max="0.5" value="0.11" step="0.01" />
-              <output id="initialArrowHeadWidthValue" for="initialArrowHeadWidth">0.11</output>
+                  <div class="config-toggle-fields" data-requires="#showFog">
+                    <div class="config-grid">
+                      <label for="fogDensity">Fog Density</label>
+                      <input id="fogDensity" type="range" min="0.005" max="0.3" value="0.06" step="0.005" />
+                      <output id="fogDensityValue" for="fogDensity">0.060</output>
+                    </div>
+                  </div>
+                </div>
+              </details>
 
-              <label for="initialArrowOpacity">Initial Arrow Opacity</label>
-              <input id="initialArrowOpacity" type="range" min="0.05" max="1" value="1" step="0.01" />
-              <output id="initialArrowOpacityValue" for="initialArrowOpacity">1.00</output>
+              <details class="config-subgroup" open>
+                <summary>Point Labels</summary>
+                <div class="config-grid">
+                  <label class="toggle" for="showDotLabels">
+                    <input id="showDotLabels" type="checkbox" checked />
+                    Show Dot Labels (Stage Names)
+                  </label>
+                  <span></span>
+                  <span></span>
 
-              <label class="toggle" for="showConnectors">
-                <input id="showConnectors" type="checkbox" checked />
-                Show Connector Edges
-              </label>
-              <span></span>
-              <span></span>
+                  <label class="toggle" for="showOriginLabel">
+                    <input id="showOriginLabel" type="checkbox" checked />
+                    Show Origin Label
+                  </label>
+                  <span></span>
+                  <span></span>
 
-              <label for="connectorColor">Connector Edge Color</label>
-              <input id="connectorColor" type="color" value="#000000" />
-              <span></span>
+                  <div class="config-toggle-fields" data-requires="#showOriginLabel">
+                    <div class="config-grid">
+                      <label for="originLabelText">Origin Label Text</label>
+                      <input id="originLabelText" type="text" value="Origin" />
+                      <span></span>
+                    </div>
+                  </div>
 
-              <label for="connectorOpacity">Connector Opacity</label>
-              <input id="connectorOpacity" type="range" min="0.05" max="1" value="0.95" step="0.01" />
-              <output id="connectorOpacityValue" for="connectorOpacity">0.95</output>
+                  <label class="toggle" for="showVectorEndLabel">
+                    <input id="showVectorEndLabel" type="checkbox" checked />
+                    Show Current Vector End Label
+                  </label>
+                  <span></span>
+                  <span></span>
 
-              <label for="connectorThickness">Connector Thickness</label>
-              <input id="connectorThickness" type="range" min="0.004" max="0.08" value="0.014" step="0.002" />
-              <output id="connectorThicknessValue" for="connectorThickness">0.014</output>
-            </div>
-          </details>
+                  <div class="config-toggle-fields" data-requires="#showVectorEndLabel">
+                    <div class="config-grid">
+                      <label for="vectorEndLabelTextMode">Vector End Text</label>
+                      <select id="vectorEndLabelTextMode">
+                        <option value="stage" selected>Current Stage Name</option>
+                        <option value="custom">Custom Text</option>
+                      </select>
+                      <span></span>
 
-          <details class="config-group">
-            <summary>Dots &amp; Axes</summary>
-            <div class="config-grid">
-              <label for="originDotColor">Origin Dot Color</label>
-              <input id="originDotColor" type="color" value="#000000" />
-              <span></span>
+                      <div class="config-toggle-fields" data-requires="#vectorEndLabelTextMode" data-requires-value="custom">
+                        <div class="config-grid">
+                          <label for="vectorEndLabelText">Custom Vector End Text</label>
+                          <input id="vectorEndLabelText" type="text" value="Vector End" />
+                          <span></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-              <label for="originDotSize">Origin Dot Size</label>
-              <input id="originDotSize" type="range" min="0.02" max="0.2" value="0.075" step="0.005" />
-              <output id="originDotSizeValue" for="originDotSize">0.075</output>
+                  <label class="toggle" for="showInitialVectorEndLabel">
+                    <input id="showInitialVectorEndLabel" type="checkbox" />
+                    Show Initial Vector End Label
+                  </label>
+                  <span></span>
+                  <span></span>
 
-              <label for="hitDotColor">Hit Dot Color</label>
-              <input id="hitDotColor" type="color" value="#ffffff" />
-              <span></span>
+                  <div class="config-toggle-fields" data-requires="#showInitialVectorEndLabel">
+                    <div class="config-grid">
+                      <label for="initialVectorEndLabelText">Initial Vector End Text</label>
+                      <input id="initialVectorEndLabelText" type="text" value="Initial Vector" />
+                      <span></span>
+                    </div>
+                  </div>
+                </div>
+              </details>
 
-              <label for="hitDotSize">Hit Dot Size</label>
-              <input id="hitDotSize" type="range" min="0.02" max="0.2" value="0.07" step="0.005" />
-              <output id="hitDotSizeValue" for="hitDotSize">0.070</output>
+              <details class="config-subgroup">
+                <summary>Label Style</summary>
+                <div class="config-grid">
+                  <label for="labelFont">Label Font</label>
+                  <select id="labelFont">
+                    <option value="Inter, system-ui, sans-serif" selected>Inter</option>
+                    <option value="Arial, Helvetica, sans-serif">Arial</option>
+                    <option value="Georgia, serif">Georgia</option>
+                    <option value="'Courier New', monospace">Courier New</option>
+                  </select>
+                  <span></span>
 
-              <label class="toggle" for="showDotOutline">
-                <input id="showDotOutline" type="checkbox" checked />
-                Show Dot Outlines
-              </label>
-              <label for="dotOutlineColor">Dot Outline Color</label>
-              <input id="dotOutlineColor" type="color" value="#1b2c3a" />
+                  <label for="labelSize">Label Size</label>
+                  <input id="labelSize" type="range" min="10" max="48" value="14" step="1" />
+                  <output id="labelSizeValue" for="labelSize">14</output>
 
-              <label for="dotOutlineThickness">Dot Outline Thickness</label>
-              <input id="dotOutlineThickness" type="range" min="0" max="0.15" value="0.025" step="0.005" />
-              <output id="dotOutlineThicknessValue" for="dotOutlineThickness">0.025</output>
+                  <label for="labelColor">Label Color</label>
+                  <input id="labelColor" type="color" value="#111827" />
+                  <span></span>
 
-              <label class="toggle" for="showAxes">
-                <input id="showAxes" type="checkbox" checked />
-                Show Axis Lines
-              </label>
-              <span></span>
-              <span></span>
+                  <label for="labelTextTransform">Text Transform</label>
+                  <select id="labelTextTransform">
+                    <option value="none" selected>None</option>
+                    <option value="uppercase">UPPERCASE</option>
+                    <option value="lowercase">lowercase</option>
+                    <option value="capitalize">Capitalize</option>
+                  </select>
+                  <span></span>
 
-              <label for="axisColor">Axis Color</label>
-              <input id="axisColor" type="color" value="#cfcfcf" />
-              <span></span>
+                  <label for="labelPlacement">Label Placement</label>
+                  <select id="labelPlacement">
+                    <option value="above" selected>Above</option>
+                    <option value="below">Below</option>
+                    <option value="left">Left</option>
+                    <option value="right">Right</option>
+                  </select>
+                  <span></span>
 
-              <label for="axisLength">Axis Length</label>
-              <input id="axisLength" type="range" min="1" max="12" value="2.75" step="0.25" />
-              <output id="axisLengthValue" for="axisLength">2.75</output>
+                  <label for="labelMargin">Anchor Margin</label>
+                  <input id="labelMargin" type="range" min="0" max="40" value="10" step="1" />
+                  <output id="labelMarginValue" for="labelMargin">10</output>
 
-              <label for="axisThickness">Axis Thickness</label>
-              <input id="axisThickness" type="range" min="0.003" max="0.08" value="0.015" step="0.002" />
-              <output id="axisThicknessValue" for="axisThickness">0.015</output>
+                  <label for="labelPointerOffset">Pointer Offset</label>
+                  <input id="labelPointerOffset" type="range" min="-60" max="60" value="0" step="1" />
+                  <output id="labelPointerOffsetValue" for="labelPointerOffset">0</output>
 
-              <label class="toggle" for="showFog">
-                <input id="showFog" type="checkbox" />
-                Enable Fog
-              </label>
-              <span></span>
-              <span></span>
+                  <label for="labelOffset">Label Offset</label>
+                  <input id="labelOffset" type="range" min="-60" max="60" value="0" step="1" />
+                  <output id="labelOffsetValue" for="labelOffset">0</output>
 
-              <label for="fogDensity">Fog Density</label>
-              <input id="fogDensity" type="range" min="0.005" max="0.3" value="0.06" step="0.005" />
-              <output id="fogDensityValue" for="fogDensity">0.060</output>
-            </div>
-          </details>
+                  <label for="labelPaddingX">Padding X</label>
+                  <input id="labelPaddingX" type="range" min="0" max="30" value="8" step="1" />
+                  <output id="labelPaddingXValue" for="labelPaddingX">8</output>
 
-          <details class="config-group">
-            <summary>Point Labels</summary>
-            <div class="config-grid">
-              <label class="toggle" for="showDotLabels">
-                <input id="showDotLabels" type="checkbox" checked />
-                Show Dot Labels (Stage Names)
-              </label>
-              <span></span>
-              <span></span>
+                  <label for="labelPaddingY">Padding Y</label>
+                  <input id="labelPaddingY" type="range" min="0" max="20" value="5" step="1" />
+                  <output id="labelPaddingYValue" for="labelPaddingY">5</output>
+                </div>
+              </details>
 
-              <label class="toggle" for="showOriginLabel">
-                <input id="showOriginLabel" type="checkbox" checked />
-                Show Origin Label
-              </label>
-              <span></span>
-              <span></span>
+              <details class="config-subgroup">
+                <summary>Label Box &amp; Pointer</summary>
+                <div class="config-grid">
+                  <label for="labelBoxColor">Box Color</label>
+                  <input id="labelBoxColor" type="color" value="#ffffff" />
+                  <span></span>
 
-              <label for="originLabelText">Origin Label Text</label>
-              <input id="originLabelText" type="text" value="Origin" />
-              <span></span>
+                  <label for="labelBoxOpacity">Box Opacity</label>
+                  <input id="labelBoxOpacity" type="range" min="0" max="1" value="0.9" step="0.05" />
+                  <output id="labelBoxOpacityValue" for="labelBoxOpacity">0.90</output>
 
-              <label class="toggle" for="showVectorEndLabel">
-                <input id="showVectorEndLabel" type="checkbox" checked />
-                Show Current Vector End Label
-              </label>
-              <span></span>
-              <span></span>
+                  <label for="labelBorderColor">Box Border Color</label>
+                  <input id="labelBorderColor" type="color" value="#111827" />
+                  <span></span>
 
-              <label for="vectorEndLabelTextMode">Vector End Text</label>
-              <select id="vectorEndLabelTextMode">
-                <option value="stage" selected>Current Stage Name</option>
-                <option value="custom">Custom Text</option>
-              </select>
-              <span></span>
+                  <label for="labelBorderWidth">Box Border Width</label>
+                  <input id="labelBorderWidth" type="range" min="0" max="8" value="1" step="0.5" />
+                  <output id="labelBorderWidthValue" for="labelBorderWidth">1.0</output>
 
-              <label for="vectorEndLabelText">Custom Vector End Text</label>
-              <input id="vectorEndLabelText" type="text" value="Vector End" />
-              <span></span>
+                  <label for="labelBorderRadius">Box Border Radius</label>
+                  <input id="labelBorderRadius" type="range" min="0" max="20" value="6" step="1" />
+                  <output id="labelBorderRadiusValue" for="labelBorderRadius">6</output>
 
-              <label class="toggle" for="showInitialVectorEndLabel">
-                <input id="showInitialVectorEndLabel" type="checkbox" />
-                Show Initial Vector End Label
-              </label>
-              <span></span>
-              <span></span>
+                  <label class="toggle" for="labelPointerShow">
+                    <input id="labelPointerShow" type="checkbox" checked />
+                    Show Pointer Arrow
+                  </label>
+                  <span></span>
+                  <span></span>
 
-              <label for="initialVectorEndLabelText">Initial Vector End Text</label>
-              <input id="initialVectorEndLabelText" type="text" value="Initial Vector" />
-              <span></span>
-
-              <label for="labelFont">Label Font</label>
-              <select id="labelFont">
-                <option value="Inter, system-ui, sans-serif" selected>Inter</option>
-                <option value="Arial, Helvetica, sans-serif">Arial</option>
-                <option value="Georgia, serif">Georgia</option>
-                <option value="'Courier New', monospace">Courier New</option>
-              </select>
-              <span></span>
-
-              <label for="labelSize">Label Size</label>
-              <input id="labelSize" type="range" min="10" max="48" value="14" step="1" />
-              <output id="labelSizeValue" for="labelSize">14</output>
-
-              <label for="labelColor">Label Color</label>
-              <input id="labelColor" type="color" value="#111827" />
-              <span></span>
-
-              <label for="labelTextTransform">Text Transform</label>
-              <select id="labelTextTransform">
-                <option value="none" selected>None</option>
-                <option value="uppercase">UPPERCASE</option>
-                <option value="lowercase">lowercase</option>
-                <option value="capitalize">Capitalize</option>
-              </select>
-              <span></span>
-
-              <label for="labelPlacement">Label Placement</label>
-              <select id="labelPlacement">
-                <option value="above" selected>Above</option>
-                <option value="below">Below</option>
-                <option value="left">Left</option>
-                <option value="right">Right</option>
-              </select>
-              <span></span>
-
-              <label for="labelMargin">Anchor Margin</label>
-              <input id="labelMargin" type="range" min="0" max="40" value="10" step="1" />
-              <output id="labelMarginValue" for="labelMargin">10</output>
-
-              <label for="labelPointerOffset">Pointer Offset</label>
-              <input id="labelPointerOffset" type="range" min="-60" max="60" value="0" step="1" />
-              <output id="labelPointerOffsetValue" for="labelPointerOffset">0</output>
-
-              <label for="labelOffset">Label Offset</label>
-              <input id="labelOffset" type="range" min="-60" max="60" value="0" step="1" />
-              <output id="labelOffsetValue" for="labelOffset">0</output>
-
-              <label for="labelPaddingX">Padding X</label>
-              <input id="labelPaddingX" type="range" min="0" max="30" value="8" step="1" />
-              <output id="labelPaddingXValue" for="labelPaddingX">8</output>
-
-              <label for="labelPaddingY">Padding Y</label>
-              <input id="labelPaddingY" type="range" min="0" max="20" value="5" step="1" />
-              <output id="labelPaddingYValue" for="labelPaddingY">5</output>
-
-              <label for="labelBoxColor">Box Color</label>
-              <input id="labelBoxColor" type="color" value="#ffffff" />
-              <span></span>
-
-              <label for="labelBoxOpacity">Box Opacity</label>
-              <input id="labelBoxOpacity" type="range" min="0" max="1" value="0.9" step="0.05" />
-              <output id="labelBoxOpacityValue" for="labelBoxOpacity">0.90</output>
-
-              <label for="labelBorderColor">Box Border Color</label>
-              <input id="labelBorderColor" type="color" value="#111827" />
-              <span></span>
-
-              <label for="labelBorderWidth">Box Border Width</label>
-              <input id="labelBorderWidth" type="range" min="0" max="8" value="1" step="0.5" />
-              <output id="labelBorderWidthValue" for="labelBorderWidth">1.0</output>
-
-              <label for="labelBorderRadius">Box Border Radius</label>
-              <input id="labelBorderRadius" type="range" min="0" max="20" value="6" step="1" />
-              <output id="labelBorderRadiusValue" for="labelBorderRadius">6</output>
-
-              <label class="toggle" for="labelPointerShow">
-                <input id="labelPointerShow" type="checkbox" checked />
-                Show Pointer Arrow
-              </label>
-              <span></span>
-              <span></span>
-
-              <label for="labelPointerSize">Pointer Size</label>
-              <input id="labelPointerSize" type="range" min="2" max="20" value="8" step="1" />
-              <output id="labelPointerSizeValue" for="labelPointerSize">8</output>
+                  <div class="config-toggle-fields" data-requires="#labelPointerShow">
+                    <div class="config-grid">
+                      <label for="labelPointerSize">Pointer Size</label>
+                      <input id="labelPointerSize" type="range" min="2" max="20" value="8" step="1" />
+                      <output id="labelPointerSizeValue" for="labelPointerSize">8</output>
+                    </div>
+                  </div>
+                </div>
+              </details>
             </div>
           </details>
 

@@ -8,6 +8,7 @@ const downloadPngBtn = document.querySelector("#downloadPngBtn");
 const settingsBtn = document.querySelector("#settingsBtn");
 const configPanel = document.querySelector("#configPanel");
 const closeConfigBtn = document.querySelector("#closeConfigBtn");
+const configPanelSubtitle = document.querySelector("#configPanelSubtitle");
 
 const coneRange = document.querySelector("#coneRange");
 const coneValue = document.querySelector("#coneValue");
@@ -196,6 +197,7 @@ const cameraZoomValue = document.querySelector("#cameraZoomValue");
 const resetCameraBtn = document.querySelector("#resetCameraBtn");
 const sceneWrap = document.querySelector(".scene-wrap");
 const sceneUi = document.querySelector(".scene-ui");
+const configConditionalGroups = Array.from(configPanel.querySelectorAll("[data-mode], [data-requires]"));
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -539,6 +541,39 @@ function resetActiveGridCellCamera() {
 function updateGridCameraModeUi() {
   const perCellCamera = shouldUsePerCellCamera();
   resetGridCellCameraBtn.disabled = !perCellCamera;
+}
+
+function controlMatchesRequirement(control, expectedValue) {
+  if (!control) {
+    return false;
+  }
+  if (control.type === "checkbox") {
+    if (expectedValue === "unchecked") {
+      return !control.checked;
+    }
+    return control.checked;
+  }
+  if (typeof expectedValue === "string" && expectedValue.length > 0) {
+    return control.value === expectedValue;
+  }
+  return Boolean(control.value);
+}
+
+function syncConfigPanelVisibility() {
+  if (configPanelSubtitle) {
+    configPanelSubtitle.textContent = state.displayMode === "grid"
+      ? "Showing grid-specific controls alongside shared scene settings."
+      : "Showing single-view controls alongside shared scene settings.";
+  }
+
+  for (const group of configConditionalGroups) {
+    const mode = group.dataset.mode;
+    const selector = group.dataset.requires;
+    const expectedValue = group.dataset.requiresValue;
+    const modeMatches = !mode || mode === state.displayMode;
+    const requirementMatches = !selector || controlMatchesRequirement(document.querySelector(selector), expectedValue);
+    group.hidden = !(modeMatches && requirementMatches);
+  }
 }
 
 function getGridLayoutForCurrentCanvas() {
@@ -2311,6 +2346,10 @@ function bindControls() {
     setConfigPanelOpen(false);
   });
 
+  configPanel.addEventListener("change", () => {
+    syncConfigPanelVisibility();
+  });
+
   downloadPngBtn.addEventListener("click", () => {
     if (state.displayMode === "grid") {
       downloadGridPng(3);
@@ -2831,6 +2870,7 @@ function bindControls() {
       gridBorderCtx.clearRect(0, 0, gridBorderOverlay.width, gridBorderOverlay.height);
     }
     updateGridCameraModeUi();
+    syncConfigPanelVisibility();
   });
 
   gridAspectRatioInput.addEventListener("change", () => {
@@ -2972,6 +3012,8 @@ function bindControls() {
   resetCameraBtn.addEventListener("click", () => {
     resetCameraTo3_4View();
   });
+
+  syncConfigPanelVisibility();
 }
 
 function syncControlsFromState() {
@@ -3111,6 +3153,7 @@ function syncControlsFromState() {
 
   showFogToggle.checked = state.showFog;
   fogDensityInput.value = String(state.fogDensity);
+  syncConfigPanelVisibility();
 }
 
 function setInitialOutputValues() {
@@ -3223,6 +3266,7 @@ function setInitialOutputValues() {
   labelBorderRadiusInput.value = String(state.labelBorderRadius);
   labelPointerShowInput.checked = state.labelPointerShow;
   labelPointerSizeInput.value = String(state.labelPointerSize);
+  syncConfigPanelVisibility();
 }
 
 window.addEventListener("resize", onResize);
