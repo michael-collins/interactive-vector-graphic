@@ -131,6 +131,9 @@ const labelSizeInput = document.querySelector("#labelSize");
 const labelSizeValue = document.querySelector("#labelSizeValue");
 const labelColorInput = document.querySelector("#labelColor");
 const labelTextTransformInput = document.querySelector("#labelTextTransform");
+const labelBoldInput = document.querySelector("#labelBold");
+const labelItalicInput = document.querySelector("#labelItalic");
+const labelUnderlineInput = document.querySelector("#labelUnderline");
 const labelPlacementInput = document.querySelector("#labelPlacement");
 const labelMarginInput = document.querySelector("#labelMargin");
 const labelMarginValue = document.querySelector("#labelMarginValue");
@@ -176,6 +179,10 @@ const gridNumberSizeValue = document.querySelector("#gridNumberSizeValue");
 const gridNumberMarginInput = document.querySelector("#gridNumberMargin");
 const gridNumberMarginValue = document.querySelector("#gridNumberMarginValue");
 const gridNumberPlacementInput = document.querySelector("#gridNumberPlacement");
+const gridNumberTextTransformInput = document.querySelector("#gridNumberTextTransform");
+const gridNumberBoldInput = document.querySelector("#gridNumberBold");
+const gridNumberItalicInput = document.querySelector("#gridNumberItalic");
+const gridNumberUnderlineInput = document.querySelector("#gridNumberUnderline");
 const gridLabelShowInput = document.querySelector("#gridLabelShow");
 const gridLabelFontInput = document.querySelector("#gridLabelFont");
 const gridLabelColorInput = document.querySelector("#gridLabelColor");
@@ -184,6 +191,10 @@ const gridLabelSizeValue = document.querySelector("#gridLabelSizeValue");
 const gridLabelMarginInput = document.querySelector("#gridLabelMargin");
 const gridLabelMarginValue = document.querySelector("#gridLabelMarginValue");
 const gridLabelPlacementInput = document.querySelector("#gridLabelPlacement");
+const gridLabelTextTransformInput = document.querySelector("#gridLabelTextTransform");
+const gridLabelBoldInput = document.querySelector("#gridLabelBold");
+const gridLabelItalicInput = document.querySelector("#gridLabelItalic");
+const gridLabelUnderlineInput = document.querySelector("#gridLabelUnderline");
 const gridSyncCellCamerasInput = document.querySelector("#gridSyncCellCameras");
 const gridSyncCellPositionInput = document.querySelector("#gridSyncCellPosition");
 const gridSyncCellZoomInput = document.querySelector("#gridSyncCellZoom");
@@ -361,6 +372,9 @@ const state = {
   labelSize: toNumber(cfg.labels?.size, 14),
   labelColor: toColor(cfg.labels?.color, "#111827"),
   labelTextTransform: typeof cfg.labels?.textTransform === "string" ? cfg.labels.textTransform : "none",
+  labelBold: toBoolean(cfg.labels?.bold, false),
+  labelItalic: toBoolean(cfg.labels?.italic, false),
+  labelUnderline: toBoolean(cfg.labels?.underline, false),
   labelPlacement: typeof cfg.labels?.placement === "string" ? cfg.labels.placement : "above",
   labelMargin: toNumber(cfg.labels?.margin, 10),
   labelPointerOffset: toNumber(cfg.labels?.pointerOffset, 0),
@@ -393,12 +407,20 @@ const state = {
   gridNumberSize: toNumber(cfg.display?.gridNumber?.size, 24),
   gridNumberMargin: toNumber(cfg.display?.gridNumber?.margin, 6),
   gridNumberPlacement: typeof cfg.display?.gridNumber?.placement === "string" ? cfg.display.gridNumber.placement : "top-middle",
+  gridNumberTextTransform: typeof cfg.display?.gridNumber?.textTransform === "string" ? cfg.display.gridNumber.textTransform : "none",
+  gridNumberBold: toBoolean(cfg.display?.gridNumber?.bold, false),
+  gridNumberItalic: toBoolean(cfg.display?.gridNumber?.italic, false),
+  gridNumberUnderline: toBoolean(cfg.display?.gridNumber?.underline, false),
   gridLabelShow: toBoolean(cfg.display?.gridLabel?.show, false),
   gridLabelFont: typeof cfg.display?.gridLabel?.font === "string" ? cfg.display.gridLabel.font : "Inter, system-ui, sans-serif",
   gridLabelColor: toColor(cfg.display?.gridLabel?.color, "#111827"),
   gridLabelSize: toNumber(cfg.display?.gridLabel?.size, 16),
   gridLabelMargin: toNumber(cfg.display?.gridLabel?.margin, 6),
   gridLabelPlacement: typeof cfg.display?.gridLabel?.placement === "string" ? cfg.display.gridLabel.placement : "top-middle",
+  gridLabelTextTransform: typeof cfg.display?.gridLabel?.textTransform === "string" ? cfg.display.gridLabel.textTransform : "none",
+  gridLabelBold: toBoolean(cfg.display?.gridLabel?.bold, false),
+  gridLabelItalic: toBoolean(cfg.display?.gridLabel?.italic, false),
+  gridLabelUnderline: toBoolean(cfg.display?.gridLabel?.underline, false),
   gridSyncCellCameras: toBoolean(
     cfg.display?.gridSyncCellCameras,
     (typeof cfg.display?.gridCameraMode === "string" ? cfg.display.gridCameraMode : "sync") !== "custom"
@@ -1266,11 +1288,13 @@ function buildConfigSnapshot() {
       size: state.labelSize,
       color: `#${state.labelColor.getHexString()}`,
       textTransform: state.labelTextTransform,
+      bold: state.labelBold,
+      italic: state.labelItalic,
+      underline: state.labelUnderline,
       placement: state.labelPlacement,
       margin: state.labelMargin,
       pointerOffset: state.labelPointerOffset,
       labelOffset: state.labelOffset,
-      offset: state.labelOffset,
       paddingX: state.labelPaddingX,
       paddingY: state.labelPaddingY,
       box: {
@@ -1318,7 +1342,11 @@ function buildConfigSnapshot() {
         color: `#${state.gridNumberColor.getHexString()}`,
         size: state.gridNumberSize,
         margin: state.gridNumberMargin,
-        placement: state.gridNumberPlacement
+        placement: state.gridNumberPlacement,
+        textTransform: state.gridNumberTextTransform,
+        bold: state.gridNumberBold,
+        italic: state.gridNumberItalic,
+        underline: state.gridNumberUnderline
       },
       gridLabel: {
         show: state.gridLabelShow,
@@ -1326,7 +1354,11 @@ function buildConfigSnapshot() {
         color: `#${state.gridLabelColor.getHexString()}`,
         size: state.gridLabelSize,
         margin: state.gridLabelMargin,
-        placement: state.gridLabelPlacement
+        placement: state.gridLabelPlacement,
+        textTransform: state.gridLabelTextTransform,
+        bold: state.gridLabelBold,
+        italic: state.gridLabelItalic,
+        underline: state.gridLabelUnderline
       },
       gridCustomCameras: gridCellViews.map((view) => ({
         position: {
@@ -1776,26 +1808,109 @@ function clampTextToCell(ctx, text, maxWidth) {
   return `${text.slice(0, lo)}${ellipsis}`;
 }
 
+function buildCanvasFont(size, fontFamily, isBold, isItalic) {
+  const parts = [];
+  if (isItalic) {
+    parts.push("italic");
+  }
+  if (isBold) {
+    parts.push("700");
+  }
+  parts.push(`${Math.max(1, size)}px`);
+  parts.push(fontFamily);
+  return parts.join(" ");
+}
+
+function applyTextTransformWithMode(text, mode) {
+  const value = String(text ?? "");
+  if (mode === "uppercase") {
+    return value.toUpperCase();
+  }
+  if (mode === "lowercase") {
+    return value.toLowerCase();
+  }
+  if (mode === "capitalize") {
+    return value.replace(/\b\w/g, (m) => m.toUpperCase());
+  }
+  return value;
+}
+
+function drawStyledCanvasText(ctx, text, x, y, options = {}) {
+  const {
+    maxWidth,
+    underline = false,
+    fontSize = 12,
+    textAlign = ctx.textAlign,
+    textBaseline = ctx.textBaseline
+  } = options;
+
+  if (Number.isFinite(maxWidth)) {
+    ctx.fillText(text, x, y, maxWidth);
+  } else {
+    ctx.fillText(text, x, y);
+  }
+
+  if (!underline) {
+    return;
+  }
+
+  const measuredWidth = ctx.measureText(text).width;
+  const lineWidth = Number.isFinite(maxWidth) ? Math.min(maxWidth, measuredWidth) : measuredWidth;
+  let startX = x;
+
+  if (textAlign === "center") {
+    startX = x - lineWidth / 2;
+  } else if (textAlign === "right" || textAlign === "end") {
+    startX = x - lineWidth;
+  }
+
+  let underlineY = y;
+  if (textBaseline === "top" || textBaseline === "hanging") {
+    underlineY = y + fontSize + 1;
+  } else if (textBaseline === "middle") {
+    underlineY = y + fontSize * 0.42;
+  } else {
+    underlineY = y + 2;
+  }
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(startX, underlineY);
+  ctx.lineTo(startX + lineWidth, underlineY);
+  ctx.lineWidth = Math.max(1, fontSize * 0.08);
+  ctx.strokeStyle = ctx.fillStyle;
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawGridTextAnnotations(ctx, layout, textScale = 1) {
   if (state.gridNumberShow) {
     ctx.fillStyle = `#${state.gridNumberColor.getHexString()}`;
-    ctx.font = `${Math.max(1, state.gridNumberSize * textScale)}px ${state.gridNumberFont}`;
+    const numberFontSize = Math.max(1, state.gridNumberSize * textScale);
+    ctx.font = buildCanvasFont(numberFontSize, state.gridNumberFont, state.gridNumberBold, state.gridNumberItalic);
     for (let i = 0; i < layout.cells.length; i += 1) {
       const cell = layout.cells[i];
       const padding = (state.gridNumberMargin + state.gridBorderThickness) * textScale;
       const pos = getPlacementPosition(cell, state.gridNumberPlacement, padding);
+      const numberText = applyTextTransformWithMode(String(i + 1), state.gridNumberTextTransform);
       ctx.textAlign = pos.textAlign;
       ctx.textBaseline = pos.textBaseline;
-      ctx.fillText(String(i + 1), pos.x, pos.y);
+      drawStyledCanvasText(ctx, numberText, pos.x, pos.y, {
+        underline: state.gridNumberUnderline,
+        fontSize: numberFontSize,
+        textAlign: pos.textAlign,
+        textBaseline: pos.textBaseline
+      });
     }
   }
 
   if (state.gridLabelShow) {
     ctx.fillStyle = `#${state.gridLabelColor.getHexString()}`;
-    ctx.font = `${Math.max(1, state.gridLabelSize * textScale)}px ${state.gridLabelFont}`;
+    const labelFontSize = Math.max(1, state.gridLabelSize * textScale);
+    ctx.font = buildCanvasFont(labelFontSize, state.gridLabelFont, state.gridLabelBold, state.gridLabelItalic);
     for (let i = 0; i < layout.cells.length; i += 1) {
       const cell = layout.cells[i];
-      const label = state.stageNames[i] || `Stage ${i + 1}`;
+      const label = applyTextTransformWithMode(state.stageNames[i] || `Stage ${i + 1}`, state.gridLabelTextTransform);
       const padding = (state.gridLabelMargin + state.gridBorderThickness) * textScale;
       const pos = getPlacementPosition(cell, state.gridLabelPlacement, padding);
       ctx.textAlign = pos.textAlign;
@@ -1803,23 +1918,19 @@ function drawGridTextAnnotations(ctx, layout, textScale = 1) {
 
       const maxWidth = Math.max(8, cell.width - padding * 2);
       const renderedText = clampTextToCell(ctx, String(label), maxWidth);
-      ctx.fillText(renderedText, pos.x, pos.y, maxWidth);
+      drawStyledCanvasText(ctx, renderedText, pos.x, pos.y, {
+        maxWidth,
+        underline: state.gridLabelUnderline,
+        fontSize: labelFontSize,
+        textAlign: pos.textAlign,
+        textBaseline: pos.textBaseline
+      });
     }
   }
 }
 
 function applyTextTransform(text) {
-  const value = String(text ?? "");
-  if (state.labelTextTransform === "uppercase") {
-    return value.toUpperCase();
-  }
-  if (state.labelTextTransform === "lowercase") {
-    return value.toLowerCase();
-  }
-  if (state.labelTextTransform === "capitalize") {
-    return value.replace(/\b\w/g, (m) => m.toUpperCase());
-  }
-  return value;
+  return applyTextTransformWithMode(text, state.labelTextTransform);
 }
 
 function colorToRgbaString(color, alpha = 1) {
@@ -1965,7 +2076,7 @@ function drawPointLabels(ctx, cameraToUse, viewport, stageValue, textScale = 1) 
   const pointerSize = state.labelPointerShow ? Math.max(0, state.labelPointerSize * textScale) : 0;
 
   ctx.save();
-  ctx.font = `${fontSize}px ${state.labelFont}`;
+  ctx.font = buildCanvasFont(fontSize, state.labelFont, state.labelBold, state.labelItalic);
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
@@ -2028,7 +2139,12 @@ function drawPointLabels(ctx, cameraToUse, viewport, stageValue, textScale = 1) 
     }
 
     ctx.fillStyle = textStyle;
-    ctx.fillText(labelText, boxX + boxWidth / 2, boxY + boxHeight / 2);
+    drawStyledCanvasText(ctx, labelText, boxX + boxWidth / 2, boxY + boxHeight / 2, {
+      underline: state.labelUnderline,
+      fontSize,
+      textAlign: "center",
+      textBaseline: "middle"
+    });
   }
 
   ctx.restore();
@@ -2798,6 +2914,18 @@ function bindControls() {
     state.labelTextTransform = labelTextTransformInput.value;
   });
 
+  labelBoldInput.addEventListener("change", () => {
+    state.labelBold = labelBoldInput.checked;
+  });
+
+  labelItalicInput.addEventListener("change", () => {
+    state.labelItalic = labelItalicInput.checked;
+  });
+
+  labelUnderlineInput.addEventListener("change", () => {
+    state.labelUnderline = labelUnderlineInput.checked;
+  });
+
   labelPlacementInput.addEventListener("change", () => {
     state.labelPlacement = labelPlacementInput.value;
   });
@@ -3024,6 +3152,22 @@ function bindControls() {
     state.gridNumberPlacement = gridNumberPlacementInput.value;
   });
 
+  gridNumberTextTransformInput.addEventListener("change", () => {
+    state.gridNumberTextTransform = gridNumberTextTransformInput.value;
+  });
+
+  gridNumberBoldInput.addEventListener("change", () => {
+    state.gridNumberBold = gridNumberBoldInput.checked;
+  });
+
+  gridNumberItalicInput.addEventListener("change", () => {
+    state.gridNumberItalic = gridNumberItalicInput.checked;
+  });
+
+  gridNumberUnderlineInput.addEventListener("change", () => {
+    state.gridNumberUnderline = gridNumberUnderlineInput.checked;
+  });
+
   gridLabelShowInput.addEventListener("change", () => {
     state.gridLabelShow = gridLabelShowInput.checked;
   });
@@ -3048,6 +3192,22 @@ function bindControls() {
 
   gridLabelPlacementInput.addEventListener("change", () => {
     state.gridLabelPlacement = gridLabelPlacementInput.value;
+  });
+
+  gridLabelTextTransformInput.addEventListener("change", () => {
+    state.gridLabelTextTransform = gridLabelTextTransformInput.value;
+  });
+
+  gridLabelBoldInput.addEventListener("change", () => {
+    state.gridLabelBold = gridLabelBoldInput.checked;
+  });
+
+  gridLabelItalicInput.addEventListener("change", () => {
+    state.gridLabelItalic = gridLabelItalicInput.checked;
+  });
+
+  gridLabelUnderlineInput.addEventListener("change", () => {
+    state.gridLabelUnderline = gridLabelUnderlineInput.checked;
   });
 
   cameraTypeInput.addEventListener("change", () => {
@@ -3098,6 +3258,10 @@ function syncControlsFromState() {
   gridNumberMarginInput.value = String(state.gridNumberMargin);
   gridNumberMarginValue.textContent = String(Math.round(state.gridNumberMargin));
   gridNumberPlacementInput.value = state.gridNumberPlacement;
+  gridNumberTextTransformInput.value = state.gridNumberTextTransform;
+  gridNumberBoldInput.checked = state.gridNumberBold;
+  gridNumberItalicInput.checked = state.gridNumberItalic;
+  gridNumberUnderlineInput.checked = state.gridNumberUnderline;
   gridLabelShowInput.checked = state.gridLabelShow;
   gridLabelFontInput.value = state.gridLabelFont;
   gridLabelColorInput.value = `#${state.gridLabelColor.getHexString()}`;
@@ -3106,6 +3270,10 @@ function syncControlsFromState() {
   gridLabelMarginInput.value = String(state.gridLabelMargin);
   gridLabelMarginValue.textContent = String(Math.round(state.gridLabelMargin));
   gridLabelPlacementInput.value = state.gridLabelPlacement;
+  gridLabelTextTransformInput.value = state.gridLabelTextTransform;
+  gridLabelBoldInput.checked = state.gridLabelBold;
+  gridLabelItalicInput.checked = state.gridLabelItalic;
+  gridLabelUnderlineInput.checked = state.gridLabelUnderline;
   cameraTypeInput.value = state.cameraType;
   cameraFovInput.value = String(state.cameraFov);
   cameraZoomInput.value = String(state.cameraZoom);
@@ -3190,6 +3358,9 @@ function syncControlsFromState() {
   labelSizeInput.value = String(state.labelSize);
   labelColorInput.value = `#${state.labelColor.getHexString()}`;
   labelTextTransformInput.value = state.labelTextTransform;
+  labelBoldInput.checked = state.labelBold;
+  labelItalicInput.checked = state.labelItalic;
+  labelUnderlineInput.checked = state.labelUnderline;
   labelPlacementInput.value = state.labelPlacement;
   labelMarginInput.value = String(state.labelMargin);
   labelPointerOffsetInput.value = String(state.labelPointerOffset);
@@ -3282,6 +3453,10 @@ function setInitialOutputValues() {
   gridNumberMarginInput.value = String(state.gridNumberMargin);
   gridNumberMarginValue.textContent = String(Math.round(state.gridNumberMargin));
   gridNumberPlacementInput.value = state.gridNumberPlacement;
+  gridNumberTextTransformInput.value = state.gridNumberTextTransform;
+  gridNumberBoldInput.checked = state.gridNumberBold;
+  gridNumberItalicInput.checked = state.gridNumberItalic;
+  gridNumberUnderlineInput.checked = state.gridNumberUnderline;
   gridLabelShowInput.checked = state.gridLabelShow;
   gridLabelFontInput.value = state.gridLabelFont;
   gridLabelColorInput.value = `#${state.gridLabelColor.getHexString()}`;
@@ -3290,6 +3465,10 @@ function setInitialOutputValues() {
   gridLabelMarginInput.value = String(state.gridLabelMargin);
   gridLabelMarginValue.textContent = String(Math.round(state.gridLabelMargin));
   gridLabelPlacementInput.value = state.gridLabelPlacement;
+  gridLabelTextTransformInput.value = state.gridLabelTextTransform;
+  gridLabelBoldInput.checked = state.gridLabelBold;
+  gridLabelItalicInput.checked = state.gridLabelItalic;
+  gridLabelUnderlineInput.checked = state.gridLabelUnderline;
   showToonOutlineInput.checked = state.showToonOutline;
   toonOutlineXrayInput.checked = state.toonOutlineXray;
   toonOutlineDashedInput.checked = state.toonOutlineDashed;
@@ -3315,6 +3494,9 @@ function setInitialOutputValues() {
   labelSizeInput.value = String(state.labelSize);
   labelColorInput.value = `#${state.labelColor.getHexString()}`;
   labelTextTransformInput.value = state.labelTextTransform;
+  labelBoldInput.checked = state.labelBold;
+  labelItalicInput.checked = state.labelItalic;
+  labelUnderlineInput.checked = state.labelUnderline;
   labelPlacementInput.value = state.labelPlacement;
   labelMarginInput.value = String(state.labelMargin);
   labelPointerOffsetInput.value = String(state.labelPointerOffset);

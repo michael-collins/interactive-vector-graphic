@@ -98,6 +98,9 @@
     "size": 14,
     "color": "#ffffff",
     "textTransform": "uppercase",
+    "bold": false,
+    "italic": false,
+    "underline": false,
     "placement": "right",
     "margin": 10,
     "pointerOffset": 5,
@@ -150,7 +153,11 @@
       "color": "#111827",
       "size": 24,
       "margin": 18,
-      "placement": "top-left"
+      "placement": "top-left",
+      "textTransform": "none",
+      "bold": false,
+      "italic": false,
+      "underline": false
     },
     "gridLabel": {
       "show": false,
@@ -158,7 +165,11 @@
       "color": "#111827",
       "size": 14,
       "margin": 9,
-      "placement": "bottom-middle"
+      "placement": "bottom-middle",
+      "textTransform": "none",
+      "bold": false,
+      "italic": false,
+      "underline": false
     },
     "gridCustomCameras": []
   },
