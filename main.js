@@ -185,6 +185,7 @@ const gridLabelMarginInput = document.querySelector("#gridLabelMargin");
 const gridLabelMarginValue = document.querySelector("#gridLabelMarginValue");
 const gridLabelPlacementInput = document.querySelector("#gridLabelPlacement");
 const gridSyncCellCamerasInput = document.querySelector("#gridSyncCellCameras");
+const gridSyncCellPositionInput = document.querySelector("#gridSyncCellPosition");
 const gridSyncCellZoomInput = document.querySelector("#gridSyncCellZoom");
 const resetGridCellCameraBtn = document.querySelector("#resetGridCellCameraBtn");
 const gridBorderOverlay = document.querySelector("#gridBorderOverlay");
@@ -402,6 +403,13 @@ const state = {
     cfg.display?.gridSyncCellCameras,
     (typeof cfg.display?.gridCameraMode === "string" ? cfg.display.gridCameraMode : "sync") !== "custom"
   ),
+  gridSyncCellPosition: toBoolean(
+    cfg.display?.gridSyncCellPosition,
+    toBoolean(
+      cfg.display?.gridSyncCellCameras,
+      (typeof cfg.display?.gridCameraMode === "string" ? cfg.display.gridCameraMode : "sync") !== "custom"
+    )
+  ),
   gridSyncCellZoom: toBoolean(
     cfg.display?.gridSyncCellZoom,
     (typeof cfg.display?.gridCameraMode === "string" ? cfg.display.gridCameraMode : "sync") !== "custom"
@@ -474,6 +482,25 @@ function shouldUsePerCellCamera() {
   return state.displayMode === "grid" && !state.gridSyncCellCameras;
 }
 
+function shouldUsePerCellPosition() {
+  return state.displayMode === "grid" && !state.gridSyncCellPosition;
+}
+
+function hasPerCellGridCameraState() {
+  return shouldUsePerCellCamera() || shouldUsePerCellPosition() || shouldUsePerCellZoom();
+}
+
+function getCameraOrbitOffset() {
+  return camera.position.clone().sub(controls.target);
+}
+
+function getGridViewOrbitOffset(view) {
+  if (!view?.position || !view?.target) {
+    return getCameraOrbitOffset();
+  }
+  return view.position.clone().sub(view.target);
+}
+
 function shouldUsePerCellZoom() {
   return state.displayMode === "grid" && !state.gridSyncCellZoom;
 }
@@ -483,14 +510,19 @@ function getGridCellViewOverride(index) {
   if (!view) {
     return null;
   }
-  const usePerCellCamera = shouldUsePerCellCamera();
+  const usePerCellOrbit = shouldUsePerCellCamera();
+  const usePerCellPosition = shouldUsePerCellPosition();
   const usePerCellZoom = shouldUsePerCellZoom();
-  if (!usePerCellCamera && !usePerCellZoom) {
+  if (!usePerCellOrbit && !usePerCellPosition && !usePerCellZoom) {
     return null;
   }
+
+  const target = usePerCellPosition ? view.target.clone() : controls.target.clone();
+  const orbitOffset = usePerCellOrbit ? getGridViewOrbitOffset(view) : getCameraOrbitOffset();
+
   return {
-    position: usePerCellCamera ? view.position : undefined,
-    target: usePerCellCamera ? view.target : undefined,
+    position: target.clone().add(orbitOffset),
+    target,
     zoom: usePerCellZoom ? view.zoom : undefined
   };
 }
@@ -500,10 +532,13 @@ function applyGridCellViewToMainCamera(index) {
   if (!view) {
     return;
   }
-  if (shouldUsePerCellCamera()) {
-    camera.position.copy(view.position);
-    controls.target.copy(view.target);
-  }
+  const currentOffset = getCameraOrbitOffset();
+  const nextTarget = shouldUsePerCellPosition() ? view.target.clone() : controls.target.clone();
+  const nextOffset = shouldUsePerCellCamera() ? getGridViewOrbitOffset(view) : currentOffset;
+
+  controls.target.copy(nextTarget);
+  camera.position.copy(nextTarget.clone().add(nextOffset));
+
   if (shouldUsePerCellZoom()) {
     camera.zoom = Number.isFinite(view.zoom) ? view.zoom : camera.zoom;
     camera.updateProjectionMatrix();
@@ -515,14 +550,18 @@ function saveMainCameraToGridCell(index) {
   if (index < 0 || index >= gridCellViews.length) {
     return;
   }
+  const currentTarget = controls.target.clone();
+  const currentOffset = getCameraOrbitOffset();
   const next = {
     position: gridCellViews[index]?.position?.clone?.() ?? camera.position.clone(),
     target: gridCellViews[index]?.target?.clone?.() ?? controls.target.clone(),
     zoom: Number.isFinite(gridCellViews[index]?.zoom) ? gridCellViews[index].zoom : camera.zoom
   };
+  if (shouldUsePerCellPosition()) {
+    next.target = currentTarget;
+  }
   if (shouldUsePerCellCamera()) {
-    next.position = camera.position.clone();
-    next.target = controls.target.clone();
+    next.position = next.target.clone().add(currentOffset);
   }
   if (shouldUsePerCellZoom()) {
     next.zoom = camera.zoom;
@@ -539,8 +578,7 @@ function resetActiveGridCellCamera() {
 }
 
 function updateGridCameraModeUi() {
-  const perCellCamera = shouldUsePerCellCamera();
-  resetGridCellCameraBtn.disabled = !perCellCamera;
+  resetGridCellCameraBtn.disabled = !hasPerCellGridCameraState();
 }
 
 function controlMatchesRequirement(control, expectedValue) {
@@ -586,7 +624,7 @@ function getGridLayoutForCurrentCanvas() {
 }
 
 function selectGridCameraCellFromPointerEvent(event) {
-  if (state.displayMode !== "grid" || (state.gridSyncCellCameras && state.gridSyncCellZoom)) {
+  if (state.displayMode !== "grid" || !hasPerCellGridCameraState()) {
     return;
   }
   const layout = getGridLayoutForCurrentCanvas();
@@ -1265,6 +1303,7 @@ function buildConfigSnapshot() {
       mode: state.displayMode,
       gridAspectRatio: state.gridAspectRatio,
       gridSyncCellCameras: state.gridSyncCellCameras,
+      gridSyncCellPosition: state.gridSyncCellPosition,
       gridSyncCellZoom: state.gridSyncCellZoom,
       gridOuterMargin: state.gridOuterMargin,
       gridCellGap: state.gridCellGap,
@@ -2040,7 +2079,7 @@ function renderGridView() {
   const savedTargetStage = state.targetStage;
   const savedAnimatedStage = state.animatedStage;
 
-  if (shouldUsePerCellCamera() || shouldUsePerCellZoom()) {
+  if (hasPerCellGridCameraState()) {
     ensureGridCellViews();
   }
 
@@ -2127,7 +2166,7 @@ function animate() {
   updateScene();
   controls.update();
 
-  if (state.displayMode === "grid" && (!state.gridSyncCellCameras || !state.gridSyncCellZoom)) {
+  if (state.displayMode === "grid" && hasPerCellGridCameraState()) {
     ensureGridCellViews();
     saveMainCameraToGridCell(activeGridCameraCell);
   }
@@ -2258,7 +2297,7 @@ function downloadGridPng(scale = 3) {
 
     const layout = computeGridLayout(targetWidth, targetHeight, 0);
 
-    if (shouldUsePerCellCamera() || shouldUsePerCellZoom()) {
+    if (hasPerCellGridCameraState()) {
       ensureGridCellViews();
     }
 
@@ -2862,7 +2901,7 @@ function bindControls() {
     sceneWrap.classList.toggle("grid-mode", state.displayMode === "grid");
     updateSceneWrapHeightForGridMode();
     controls.enabled = true;
-    if (state.displayMode === "grid" && (!state.gridSyncCellCameras || !state.gridSyncCellZoom)) {
+    if (state.displayMode === "grid" && hasPerCellGridCameraState()) {
       ensureGridCellViews();
       applyGridCellViewToMainCamera(activeGridCameraCell);
     }
@@ -2881,7 +2920,28 @@ function bindControls() {
   gridSyncCellCamerasInput.addEventListener("change", () => {
     state.gridSyncCellCameras = gridSyncCellCamerasInput.checked;
     ensureGridCellViews();
-    if (state.displayMode === "grid" && !state.gridSyncCellCameras) {
+    if (state.gridSyncCellCameras) {
+      const sharedOffset = getCameraOrbitOffset();
+      for (let i = 0; i < gridCellViews.length; i += 1) {
+        gridCellViews[i].position.copy(gridCellViews[i].target.clone().add(sharedOffset));
+      }
+    } else if (state.displayMode === "grid") {
+      applyGridCellViewToMainCamera(activeGridCameraCell);
+    }
+    updateGridCameraModeUi();
+  });
+
+  gridSyncCellPositionInput.addEventListener("change", () => {
+    state.gridSyncCellPosition = gridSyncCellPositionInput.checked;
+    ensureGridCellViews();
+    if (state.gridSyncCellPosition) {
+      const sharedTarget = controls.target.clone();
+      for (let i = 0; i < gridCellViews.length; i += 1) {
+        const orbitOffset = getGridViewOrbitOffset(gridCellViews[i]);
+        gridCellViews[i].target.copy(sharedTarget);
+        gridCellViews[i].position.copy(sharedTarget.clone().add(orbitOffset));
+      }
+    } else if (state.displayMode === "grid") {
       applyGridCellViewToMainCamera(activeGridCameraCell);
     }
     updateGridCameraModeUi();
@@ -2901,7 +2961,7 @@ function bindControls() {
   });
 
   resetGridCellCameraBtn.addEventListener("click", () => {
-    if (state.gridSyncCellCameras) {
+    if (!hasPerCellGridCameraState()) {
       return;
     }
     resetActiveGridCellCamera();
@@ -3027,6 +3087,7 @@ function syncControlsFromState() {
   gridCellGapInput.value = String(state.gridCellGap);
   gridCellGapValue.textContent = String(Math.round(state.gridCellGap));
   gridSyncCellCamerasInput.checked = state.gridSyncCellCameras;
+  gridSyncCellPositionInput.checked = state.gridSyncCellPosition;
   gridSyncCellZoomInput.checked = state.gridSyncCellZoom;
   updateGridCameraModeUi();
   gridNumberShowInput.checked = state.gridNumberShow;
@@ -3211,6 +3272,7 @@ function setInitialOutputValues() {
   gridCellGapInput.value = String(state.gridCellGap);
   gridCellGapValue.textContent = String(Math.round(state.gridCellGap));
   gridSyncCellCamerasInput.checked = state.gridSyncCellCameras;
+  gridSyncCellPositionInput.checked = state.gridSyncCellPosition;
   gridSyncCellZoomInput.checked = state.gridSyncCellZoom;
   gridNumberShowInput.checked = state.gridNumberShow;
   gridNumberFontInput.value = state.gridNumberFont;
@@ -3291,7 +3353,7 @@ updateCameraType();
 controls.update();
 gridCellViews = parseGridCustomViews(cfg.display?.gridCustomCameras);
 ensureGridCellViews();
-if (state.displayMode === "grid" && (!state.gridSyncCellCameras || !state.gridSyncCellZoom)) {
+if (state.displayMode === "grid" && hasPerCellGridCameraState()) {
   applyGridCellViewToMainCamera(activeGridCameraCell);
 }
 rebuildStageGeometry();

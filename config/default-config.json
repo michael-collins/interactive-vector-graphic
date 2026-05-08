@@ -135,6 +135,7 @@
     "mode": "single",
     "gridAspectRatio": "1:1",
     "gridSyncCellCameras": true,
+    "gridSyncCellPosition": true,
     "gridSyncCellZoom": true,
     "gridOuterMargin": 17,
     "gridCellGap": 0,
