@@ -43,8 +43,8 @@
   },
   "coneIntersection": {
     "show": true,
-    "color": "#5c5c5c",
-    "width": 0.004
+    "color": "#404040",
+    "width": 0.01
   },
   "initialConeIntersection": {
     "show": false,
@@ -55,7 +55,7 @@
     "show": true,
     "color": "#000000",
     "thickness": 0.006,
-    "extension": 1.2,
+    "extension": 1.25,
     "headLength": 0.25,
     "headWidth": 0.13,
     "opacity": 1
@@ -64,7 +64,7 @@
     "show": true,
     "color": "#9c9c9c",
     "thickness": 0.006,
-    "extension": 1.2,
+    "extension": 1.15,
     "headLength": 0.2,
     "headWidth": 0.11,
     "opacity": 1
@@ -89,9 +89,9 @@
     "showDotLabels": true,
     "showOriginLabel": false,
     "originText": "Origin",
-    "showVectorEndLabel": true,
-    "vectorEndTextMode": "stage",
-    "vectorEndText": "Vector End",
+    "showVectorEndLabel": false,
+    "vectorEndTextMode": "custom",
+    "vectorEndText": "",
     "showInitialVectorEndLabel": false,
     "initialVectorEndText": "Initial Vector",
     "font": "Inter, system-ui, sans-serif",
@@ -105,7 +105,6 @@
     "margin": 10,
     "pointerOffset": 5,
     "labelOffset": 1,
-    "offset": 1,
     "paddingX": 10,
     "paddingY": 5,
     "box": {
@@ -136,16 +135,16 @@
   },
   "display": {
     "mode": "single",
-    "gridAspectRatio": "1:1",
+    "gridAspectRatio": "16:9",
     "gridSyncCellCameras": true,
-    "gridSyncCellPosition": true,
+    "gridSyncCellPosition": false,
     "gridSyncCellZoom": true,
     "gridOuterMargin": 17,
     "gridCellGap": 0,
     "gridBorder": {
       "show": true,
-      "color": "#6b7280",
-      "thickness": 2
+      "color": "#000000",
+      "thickness": 5.5
     },
     "gridNumber": {
       "show": true,
@@ -171,16 +170,69 @@
       "italic": false,
       "underline": false
     },
-    "gridCustomCameras": []
+    "gridCustomCameras": [
+      {
+        "position": {
+          "x": 8.019391579631437,
+          "y": 4.428981609926719,
+          "z": 6.6227302348191355
+        },
+        "target": {
+          "x": 0.294860045822292,
+          "y": 0.10601228090165579,
+          "z": 0.2503435574164614
+        },
+        "zoom": 1
+      },
+      {
+        "position": {
+          "x": 8.019391579631437,
+          "y": 4.428981609926719,
+          "z": 6.6227302348191355
+        },
+        "target": {
+          "x": 0.2787359929875832,
+          "y": 0.17959295466392672,
+          "z": 0.19465405584321813
+        },
+        "zoom": 1
+      },
+      {
+        "position": {
+          "x": 8.019391579631437,
+          "y": 4.428981609926719,
+          "z": 6.6227302348191355
+        },
+        "target": {
+          "x": 0,
+          "y": 0.8,
+          "z": 0
+        },
+        "zoom": 1
+      },
+      {
+        "position": {
+          "x": 8.019391579631437,
+          "y": 4.428981609926719,
+          "z": 6.6227302348191355
+        },
+        "target": {
+          "x": 0.25683006012021564,
+          "y": 1.5162060762992904,
+          "z": -0.9436258431902856
+        },
+        "zoom": 1
+      }
+    ]
   },
   "camera": {
     "type": "orthographic",
     "fov": 44,
     "zoom": 3.4,
     "position": {
-      "x": 8.019391579631435,
-      "y": 4.42898160992672,
-      "z": 6.622730234819135
+      "x": 7.966945898113716,
+      "y": 4.849849733122175,
+      "z": 6.572986161408614
     }
   }
 }
