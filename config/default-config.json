@@ -2,10 +2,10 @@
   "activeStage": 4,
   "stageCount": 4,
   "stageNames": [
-    "Provocation",
-    "Inspiration",
-    "Iteration",
-    "Delivery"
+    "1st Iteration",
+    "2nd Iteration",
+    "3rd Iteration",
+    "Final Iteration"
   ],
   "seed": 60,
   "autoApplySeed": true,
@@ -15,8 +15,8 @@
   "showConeHistory": true,
   "showSpheres": true,
   "showConnectors": true,
-  "sphereOpacity": 0.08,
-  "shaderMode": "current",
+  "sphereOpacity": 0.36,
+  "shaderMode": "flat",
   "toonOutline": {
     "show": true,
     "color": "#292929",
@@ -28,23 +28,23 @@
     "dashRepeat": 41
   },
   "sphereStageColors": [
-    "#dedede",
-    "#dedede",
-    "#dedede",
-    "#dedede"
+    "#e8e8e8",
+    "#e8e8e8",
+    "#e8e8e8",
+    "#e8e8e8"
   ],
   "coneHistory": {
     "shaderMode": "flat",
     "originMode": "world",
     "angleLimiter": true,
-    "color": "#8f8f8f",
+    "color": "#b5b5b5",
     "activeOpacity": 1,
-    "inactiveOpacity": 0.26
+    "inactiveOpacity": 0.54
   },
   "coneIntersection": {
     "show": true,
     "color": "#404040",
-    "width": 0.01
+    "width": 0.008
   },
   "initialConeIntersection": {
     "show": false,
@@ -54,7 +54,7 @@
   "arrow": {
     "show": true,
     "color": "#000000",
-    "thickness": 0.006,
+    "thickness": 0.01,
     "extension": 1.25,
     "headLength": 0.25,
     "headWidth": 0.13,
@@ -63,7 +63,7 @@
   "initialArrow": {
     "show": true,
     "color": "#9c9c9c",
-    "thickness": 0.006,
+    "thickness": 0.01,
     "extension": 1.15,
     "headLength": 0.2,
     "headWidth": 0.11,
@@ -71,26 +71,26 @@
   },
   "connectors": {
     "color": "#000000",
-    "thickness": 0.014,
+    "thickness": 0.056,
     "opacity": 0.95
   },
   "dots": {
     "originColor": "#000000",
-    "originSize": 0.075,
+    "originSize": 0.12,
     "hitColor": "#ffffff",
-    "hitSize": 0.07,
+    "hitSize": 0.06,
     "outline": {
       "show": true,
-      "color": "#1b2c3a",
-      "thickness": 0.025
+      "color": "#000000",
+      "thickness": 0.055
     }
   },
   "labels": {
-    "showDotLabels": true,
-    "showOriginLabel": false,
-    "originText": "Origin",
-    "showVectorEndLabel": false,
-    "vectorEndTextMode": "custom",
+    "showDotLabels": false,
+    "showOriginLabel": true,
+    "originText": "Initial idea",
+    "showVectorEndLabel": true,
+    "vectorEndTextMode": "stage",
     "vectorEndText": "",
     "showInitialVectorEndLabel": false,
     "initialVectorEndText": "Initial Vector",
@@ -121,7 +121,7 @@
   },
   "axes": {
     "show": true,
-    "color": "#cfcfcf",
+    "color": "#d1d1d1",
     "length": 2.25,
     "thickness": 0.015
   },
@@ -131,10 +131,10 @@
   },
   "fog": {
     "show": false,
-    "density": 0.06
+    "density": 0.055
   },
   "display": {
-    "mode": "single",
+    "mode": "grid",
     "gridAspectRatio": "16:9",
     "gridSyncCellCameras": true,
     "gridSyncCellPosition": false,
@@ -230,9 +230,9 @@
     "fov": 44,
     "zoom": 3.4,
     "position": {
-      "x": 7.966945898113716,
-      "y": 4.849849733122175,
-      "z": 6.572986161408614
+      "x": 8.26180594393601,
+      "y": 4.155862014023832,
+      "z": 6.823329718825077
     }
   }
 }
