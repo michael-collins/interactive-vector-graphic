@@ -2079,6 +2079,7 @@ function getPointLabelEntries(stageValue) {
   const ctx = getPointLabelContext(stageValue);
   const labels = [];
   const isAnimatingBackward = state.targetStage < stageValue - 1e-6;
+  const isAnimatingForward = state.targetStage > stageValue + 1e-6;
 
   if (state.showDotLabels) {
     for (let i = 0; i < ctx.maxVisibleStage; i += 1) {
@@ -2100,7 +2101,10 @@ function getPointLabelEntries(stageValue) {
     const stageName = state.stageNames[ctx.targetStage - 1] || `Stage ${ctx.targetStage}`;
     const isStageMode = state.vectorEndTextMode !== "custom";
     const suppressReverseStageLabel = isAnimatingBackward && state.showDotLabels && isStageMode;
-    if (!suppressReverseStageLabel) {
+    const forwardRemaining = state.targetStage - stageValue;
+    // Show a little before landing to avoid feeling laggy.
+    const suppressForwardUntilLanded = isAnimatingForward && forwardRemaining > 0.22;
+    if (!suppressReverseStageLabel && !suppressForwardUntilLanded) {
       labels.push({
         text: isStageMode ? stageName : (state.vectorEndText || "Vector End"),
         point: ctx.currentPoint
