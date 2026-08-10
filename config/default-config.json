@@ -86,7 +86,7 @@
     }
   },
   "labels": {
-    "showDotLabels": false,
+    "showDotLabels": true,
     "showOriginLabel": true,
     "originText": "Initial idea",
     "showVectorEndLabel": true,

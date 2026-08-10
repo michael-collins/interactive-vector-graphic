@@ -314,6 +314,7 @@ const state = {
     : ["Stage 1", "Stage 2", "Stage 3", "Stage 4"],
   targetStage: Math.max(1, Math.round(toNumber(cfg.activeStage, 1))),
   animatedStage: Math.max(1, Math.round(toNumber(cfg.activeStage, 1))),
+  transitionFromStage: Math.max(1, Math.round(toNumber(cfg.activeStage, 1))),
   coneDegrees: toNumber(cfg.coneDegrees, Number(coneRange.value)),
   coneRatio: toNumber(cfg.coneRatio, Number(coneRatioInput.value)),
   coneExtension: toNumber(cfg.coneExtension, Number(coneExtensionInput.value)),
@@ -954,6 +955,7 @@ function renderStageButtons() {
     btn.textContent = state.stageNames[i - 1] || `Stage ${i}`;
     btn.title = "Double-click to rename";
     btn.addEventListener("click", () => {
+      state.transitionFromStage = Math.round(state.animatedStage);
       state.targetStage = i;
       updateStageButtons();
     });
@@ -1403,12 +1405,34 @@ function buildConfigSnapshot() {
 function updateScene() {
   const dirs = getStageDirections();
   const maxVisibleStage = Math.max(1, Math.round(state.animatedStage));
+  // Cone visibility is handled separately from spheres so backward jumps can hide
+  // intermediate "future" cones while still allowing the single departing cone to animate out.
+  const isForward = state.targetStage > state.animatedStage;
+  const departingStage = state.transitionFromStage;
+  const backwardStepCount = Math.max(0, departingStage - state.targetStage);
+  const coneBaseVisibleStage = isForward
+    ? maxVisibleStage
+    : state.targetStage;
+  // Do not show an extra departing cone for single-step backward moves (e.g. 4 -> 3).
+  const showDeparting = !isForward
+    && backwardStepCount > 1
+    && departingStage > coneBaseVisibleStage
+    && state.animatedStage > departingStage - 1;
+  const animatedConeStage = isForward ? Math.ceil(state.animatedStage) : (showDeparting ? departingStage : coneBaseVisibleStage);
+  const coneAnimMix = state.animatedStage - Math.floor(state.animatedStage);
+  const isTransitioning = coneAnimMix > 0.005 && coneAnimMix < 0.999;
+  const shouldAnimateCone = isTransitioning && (isForward || showDeparting);
+  const forwardT = THREE.MathUtils.smoothstep(coneAnimMix, 0.04, 0.92);
+  const backwardT = THREE.MathUtils.smoothstep(1 - coneAnimMix, 0.04, 0.92);
+  const animatedConeProgress = shouldAnimateCone ? (isForward ? forwardT : backwardT) : 1;
   const stagePoints = stageRadii.map((r, i) => new THREE.Vector3().copy(dirs[i]).multiplyScalar(r));
 
   sphereMeshes.forEach((mesh, index) => {
     const stage = index + 1;
     const activeDistance = Math.abs(state.animatedStage - stage);
+    const stageAnimScale = THREE.MathUtils.lerp(0.92, 1, THREE.MathUtils.clamp(1 - activeDistance, 0, 1));
     mesh.visible = state.showSpheres && stage <= maxVisibleStage;
+    mesh.scale.setScalar(stageRadii[index] * stageAnimScale);
     mesh.material.opacity = state.sphereOpacity * THREE.MathUtils.clamp(1 - activeDistance * 0.45, 0.2, 1);
     if (mesh.material.color) {
       mesh.material.color.copy(state.sphereStageColors[index]);
@@ -1417,14 +1441,16 @@ function updateScene() {
 
   sphereOutlineMeshes.forEach((outline, index) => {
     const stage = index + 1;
+    const activeDistance = Math.abs(state.animatedStage - stage);
+    const stageAnimScale = THREE.MathUtils.lerp(0.92, 1, THREE.MathUtils.clamp(1 - activeDistance, 0, 1));
     const visible = state.showSpheres && stage <= maxVisibleStage && state.showToonOutline;
     outline.visible = visible;
     outline.scale.setScalar(
       state.toonOutlineXray
-        ? stageRadii[index]
-        : stageRadii[index] + state.toonOutlineThickness
+        ? stageRadii[index] * stageAnimScale
+        : (stageRadii[index] + state.toonOutlineThickness) * stageAnimScale
     );
-    updateSphereOutlineMaterialProps(outline.material, stageRadii[index]);
+    updateSphereOutlineMaterialProps(outline.material, stageRadii[index] * stageAnimScale);
     outline.material.opacity = stage === state.targetStage ? 1 : 0.78;
   });
 
@@ -1490,8 +1516,6 @@ function updateScene() {
   }
 
   const fromDot = state.coneOriginMode === "dot";
-  const activeIndex = state.targetStage - 1;
-  const activeConeAngle = getConeAngleForStage(activeIndex);
 
   // Compute cone apex and direction per-stage for both modes
   const coneApexes = stagePoints.map((pt, i) => fromDot && i > 0 ? stagePoints[i - 1].clone() : new THREE.Vector3());
@@ -1506,10 +1530,51 @@ function updateScene() {
     fromDot && i > 0 ? pt.distanceTo(coneApexes[i]) : stageRadii[i]
   );
 
-  // Intersection ring for active stage
-  const ringDist = coneDists[activeIndex];
-  const ringDir = coneDirs[activeIndex];
-  const ringApex = coneApexes[activeIndex];
+  const animatedConeIdx = Math.max(0, animatedConeStage - 1);
+  let animatedConeState = null;
+  if (shouldAnimateCone && animatedConeStage > 1) {
+    const fromIdx = isForward ? Math.max(0, animatedConeIdx - 1) : animatedConeIdx;
+    const toIdx = isForward ? animatedConeIdx : Math.max(0, animatedConeIdx - 1);
+    const p = animatedConeProgress;
+    const dir = new THREE.Vector3().copy(coneDirs[fromIdx]).lerp(coneDirs[toIdx], p).normalize();
+    const apex = new THREE.Vector3().copy(coneApexes[fromIdx]).lerp(coneApexes[toIdx], p);
+    const dist = THREE.MathUtils.lerp(coneDists[fromIdx], coneDists[toIdx], p);
+    const angle = THREE.MathUtils.lerp(getConeAngleForStage(fromIdx), getConeAngleForStage(toIdx), p);
+    const depth = Math.max(0.001, dist * Math.cos(angle) * (1 + state.coneExtension));
+    const radius = Math.tan(angle) * depth;
+    animatedConeState = {
+      fromIdx,
+      toIdx,
+      progress: p,
+      dir,
+      apex,
+      dist,
+      angle,
+      height: depth,
+      radius
+    };
+  }
+
+  // Intersection ring follows cone leading edges.
+  // Forward: follow the incoming cone edge while it morphs from the previous cone.
+  // Backward: interpolate from departing cone edge to target cone edge.
+  let ringDist;
+  let ringDir;
+  let ringApex;
+  let activeConeAngle;
+
+  if (animatedConeState) {
+    ringDist = animatedConeState.dist;
+    ringDir = animatedConeState.dir;
+    ringApex = animatedConeState.apex;
+    activeConeAngle = animatedConeState.angle;
+  } else {
+    const ringStageIdx = Math.max(0, state.targetStage - 1);
+    ringDist = coneDists[ringStageIdx];
+    ringDir = coneDirs[ringStageIdx];
+    ringApex = coneApexes[ringStageIdx];
+    activeConeAngle = getConeAngleForStage(ringStageIdx);
+  }
   const { right, up } = buildPerpendicularBasis(ringDir);
   const ringCenter = ringApex.clone().addScaledVector(ringDir, ringDist * Math.cos(activeConeAngle));
   const ringRadius = ringDist * Math.sin(activeConeAngle);
@@ -1559,12 +1624,29 @@ function updateScene() {
     const visualConeHeight = Math.max(0.001, calcDepth * (1 + state.coneExtension));
     const coneRadius = Math.tan(coneAngle) * visualConeHeight;
 
-    cone.visible = state.showConeHistory && stage <= maxVisibleStage;
-    cone.scale.set(coneRadius, visualConeHeight, coneRadius);
+    const isBaseConeVisible = stage <= coneBaseVisibleStage;
+    const isDepartingConeVisible = showDeparting && stage === departingStage;
+    cone.visible = state.showConeHistory && (isBaseConeVisible || isDepartingConeVisible);
     cone.position.copy(coneApexes[i]);
     cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), coneDirs[i]);
     cone.material.color.copy(state.coneColor);
-    cone.material.opacity = stage === state.targetStage ? state.coneActiveOpacity : state.coneInactiveOpacity;
+
+    // Animate by morphing from previous cone geometry to current cone geometry.
+    const isNewestCone = stage === animatedConeStage && stage > 1 && stage <= state.stageCount;
+    const shouldAnimate = isNewestCone && shouldAnimateCone && animatedConeState;
+    if (shouldAnimate) {
+      cone.position.copy(animatedConeState.apex);
+      cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), animatedConeState.dir);
+      cone.scale.set(animatedConeState.radius, animatedConeState.height, animatedConeState.radius);
+      const fromOpacity = isForward ? state.coneInactiveOpacity : state.coneActiveOpacity;
+      const toOpacity = isForward
+        ? (stage === state.targetStage ? state.coneActiveOpacity : state.coneInactiveOpacity)
+        : state.coneInactiveOpacity;
+      cone.material.opacity = THREE.MathUtils.lerp(fromOpacity, toOpacity, animatedConeState.progress);
+    } else {
+      cone.scale.set(coneRadius, visualConeHeight, coneRadius);
+      cone.material.opacity = stage === state.targetStage ? state.coneActiveOpacity : state.coneInactiveOpacity;
+    }
   });
 }
 
@@ -1964,8 +2046,15 @@ function worldToCanvasPosition(worldPoint, cameraToUse, viewport) {
 
 function getPointLabelContext(stageValue) {
   const clampedStage = THREE.MathUtils.clamp(stageValue, 1, state.stageCount);
-  const targetStage = THREE.MathUtils.clamp(Math.round(clampedStage), 1, state.stageCount);
-  const maxVisibleStage = targetStage;
+  const isAnimatingBackward = state.targetStage < clampedStage - 1e-6;
+  const targetStage = THREE.MathUtils.clamp(
+    isAnimatingBackward ? Math.floor(clampedStage + 1e-6) : Math.round(clampedStage),
+    1,
+    state.stageCount
+  );
+  // Labels tied to stage dots should only appear after a stage is reached.
+  const landedStage = THREE.MathUtils.clamp(Math.floor(clampedStage + 1e-6), 1, state.stageCount);
+  const maxVisibleStage = landedStage;
   const dirs = getStageDirections();
   const stagePoints = stageRadii.map((r, i) => new THREE.Vector3().copy(dirs[i]).multiplyScalar(r));
   const savedAnimatedStage = state.animatedStage;
@@ -1989,6 +2078,7 @@ function getPointLabelContext(stageValue) {
 function getPointLabelEntries(stageValue) {
   const ctx = getPointLabelContext(stageValue);
   const labels = [];
+  const isAnimatingBackward = state.targetStage < stageValue - 1e-6;
 
   if (state.showDotLabels) {
     for (let i = 0; i < ctx.maxVisibleStage; i += 1) {
@@ -2008,10 +2098,14 @@ function getPointLabelEntries(stageValue) {
 
   if (state.showVectorEndLabel) {
     const stageName = state.stageNames[ctx.targetStage - 1] || `Stage ${ctx.targetStage}`;
-    labels.push({
-      text: state.vectorEndTextMode === "custom" ? (state.vectorEndText || "Vector End") : stageName,
-      point: ctx.currentPoint
-    });
+    const isStageMode = state.vectorEndTextMode !== "custom";
+    const suppressReverseStageLabel = isAnimatingBackward && state.showDotLabels && isStageMode;
+    if (!suppressReverseStageLabel) {
+      labels.push({
+        text: isStageMode ? stageName : (state.vectorEndText || "Vector End"),
+        point: ctx.currentPoint
+      });
+    }
   }
 
   if (state.showInitialVectorEndLabel && ctx.targetStage > 1) {
