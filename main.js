@@ -5,6 +5,19 @@ const canvas = document.querySelector("#scene");
 const stageBar = document.querySelector(".stage-list");
 const stageColorList = document.querySelector("#stageColorList");
 const downloadPngBtn = document.querySelector("#downloadPngBtn");
+const downloadGifBtn = document.querySelector("#downloadGifBtn");
+const exportDialogBackdrop = document.querySelector("#exportDialogBackdrop");
+const exportDialogTitle = document.querySelector("#exportDialogTitle");
+const exportDialogDesc = document.querySelector("#exportDialogDesc");
+const exportWidthInput = document.querySelector("#exportWidth");
+const exportHeightInput = document.querySelector("#exportHeight");
+const exportScaleInput = document.querySelector("#exportScale");
+const exportScaleValue = document.querySelector("#exportScaleValue");
+const exportGifOptions = document.querySelector("#exportGifOptions");
+const exportFrameCountInput = document.querySelector("#exportFrameCount");
+const exportFrameDelayInput = document.querySelector("#exportFrameDelay");
+const exportDialogCancel = document.querySelector("#exportDialogCancel");
+const exportDialogExport = document.querySelector("#exportDialogExport");
 const settingsBtn = document.querySelector("#settingsBtn");
 const configPanel = document.querySelector("#configPanel");
 const closeConfigBtn = document.querySelector("#closeConfigBtn");
@@ -2329,10 +2342,9 @@ function timestampForFilename() {
   return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
 }
 
-function downloadHiResPng(scale = 3) {
-  const parent = canvas.parentElement;
-  const targetWidth = Math.max(1, Math.round(parent.clientWidth * scale));
-  const targetHeight = Math.max(1, Math.round(parent.clientHeight * scale));
+function downloadHiResPng(targetWidth, targetHeight) {
+  targetWidth = Math.max(1, Math.round(targetWidth));
+  targetHeight = Math.max(1, Math.round(targetHeight));
 
   const previousSize = new THREE.Vector2();
   renderer.getSize(previousSize);
@@ -2357,7 +2369,7 @@ function downloadHiResPng(scale = 3) {
       tempCamera,
       { x: 0, y: 0, width: targetWidth, height: targetHeight },
       state.animatedStage,
-      scale
+      1
     );
 
     const dataUrl = offscreen.toDataURL("image/png");
@@ -2374,31 +2386,15 @@ function downloadHiResPng(scale = 3) {
     controls.update();
     renderer.render(scene, camera);
     downloadPngBtn.disabled = false;
+    exportDialogExport.disabled = false;
+    exportDialogCancel.disabled = false;
+    setExportDialogOpen(false);
   }
 }
 
-function downloadGridPng(scale = 3) {
-  const parent = canvas.parentElement;
-  const parentWidth = Math.max(1, parent.clientWidth);
-  const parentHeight = Math.max(1, parent.clientHeight);
-
-  let targetWidth, targetHeight;
-  const ratio = state.gridAspectRatio;
-  if (ratio === "free") {
-    targetWidth = Math.round(parentWidth * scale);
-    targetHeight = Math.round(parentHeight * scale);
-  } else {
-    const [rw, rh] = ratio.split(":").map(Number);
-    const baseWidth = parentWidth * scale;
-    const baseHeight = parentHeight * scale;
-    if (baseWidth / baseHeight > rw / rh) {
-      targetHeight = Math.round(baseHeight);
-      targetWidth = Math.round(targetHeight * (rw / rh));
-    } else {
-      targetWidth = Math.round(baseWidth);
-      targetHeight = Math.round(targetWidth * (rh / rw));
-    }
-  }
+function downloadGridPng(targetWidth, targetHeight) {
+  targetWidth = Math.max(1, Math.round(targetWidth));
+  targetHeight = Math.max(1, Math.round(targetHeight));
 
   const previousSize = new THREE.Vector2();
   renderer.getSize(previousSize);
@@ -2458,16 +2454,16 @@ function downloadGridPng(scale = 3) {
       drawGridBorders(
         ctx,
         layout,
-        state.gridBorderThickness * scale,
+        state.gridBorderThickness,
         `#${state.gridBorderColor.getHexString()}`
       );
     }
 
     if ((state.gridNumberShow || state.gridLabelShow) && state.stageCount > 0) {
-      drawGridTextAnnotations(ctx, layout, scale);
+      drawGridTextAnnotations(ctx, layout, 1);
     }
 
-    drawGridPointLabels(ctx, layout, scale);
+    drawGridPointLabels(ctx, layout, 1);
 
     const dataUrl = offscreen.toDataURL("image/png");
     const link = document.createElement("a");
@@ -2483,6 +2479,169 @@ function downloadGridPng(scale = 3) {
     controls.update();
     renderer.render(scene, camera);
     downloadPngBtn.disabled = false;
+    exportDialogExport.disabled = false;
+    exportDialogCancel.disabled = false;
+    setExportDialogOpen(false);
+  }
+}
+
+async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, frameDelayMs) {
+  targetWidth = Math.max(1, Math.round(targetWidth));
+  targetHeight = Math.max(1, Math.round(targetHeight));
+
+  const previousSize = new THREE.Vector2();
+  renderer.getSize(previousSize);
+  const previousPixelRatio = renderer.getPixelRatio();
+
+  downloadGifBtn.disabled = true;
+  downloadPngBtn.disabled = true;
+
+  let workerUrl = null;
+
+  try {
+    renderer.setPixelRatio(1);
+    renderer.setSize(targetWidth, targetHeight, false);
+    const tempCamera = createRenderCameraForAspect(targetWidth / targetHeight);
+
+    const savedTargetStage = state.targetStage;
+    const savedAnimatedStage = state.animatedStage;
+
+    // Build a canvas to capture each frame
+    const offscreen = document.createElement("canvas");
+    offscreen.width = targetWidth;
+    offscreen.height = targetHeight;
+    const ctx = offscreen.getContext("2d");
+
+    // Create the GIF encoder – fetch worker script as blob URL to avoid CORS
+    const workerResp = await fetch("https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js");
+    const workerBlob = await workerResp.blob();
+    workerUrl = URL.createObjectURL(workerBlob);
+
+    const gif = new GIF({
+      workers: 2,
+      quality: 10,
+      width: targetWidth,
+      height: targetHeight,
+      workerScript: workerUrl
+    });
+
+    const stageCount = state.stageCount;
+
+    for (let i = 0; i < frameCount; i += 1) {
+      // Map frame index to a fractional stage value (1..stageCount)
+      const t = frameCount > 1 ? i / (frameCount - 1) : 0;
+      const stageValue = 1 + t * (stageCount - 1);
+
+      state.targetStage = THREE.MathUtils.clamp(Math.round(stageValue), 1, stageCount);
+      state.animatedStage = stageValue;
+      updateScene();
+      renderer.render(scene, tempCamera);
+
+      ctx.clearRect(0, 0, targetWidth, targetHeight);
+      ctx.drawImage(renderer.domElement, 0, 0);
+      drawPointLabels(
+        ctx,
+        tempCamera,
+        { x: 0, y: 0, width: targetWidth, height: targetHeight },
+        stageValue,
+        1
+      );
+
+      gif.addFrame(ctx, { copy: true, delay: frameDelayMs });
+
+      // Update button text to show progress
+      if ((i + 1) % 4 === 0 || i === frameCount - 1) {
+        exportDialogExport.textContent = `Rendering... ${i + 1}/${frameCount}`;
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    }
+
+    // Restore state
+    state.targetStage = savedTargetStage;
+    state.animatedStage = savedAnimatedStage;
+    updateScene();
+
+    // Wait for GIF to finish encoding
+    const blob = await new Promise((resolve) => {
+      gif.on("finished", (blob) => resolve(blob));
+      gif.render();
+    });
+
+    // Download the GIF
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `creative-process-${timestampForFilename()}.gif`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } finally {
+    renderer.setPixelRatio(previousPixelRatio);
+    renderer.setSize(previousSize.x, previousSize.y, false);
+    updateScene();
+    controls.update();
+    renderer.render(scene, camera);
+    downloadGifBtn.disabled = false;
+    downloadPngBtn.disabled = false;
+    exportDialogExport.disabled = false;
+    exportDialogCancel.disabled = false;
+    exportDialogExport.textContent = exportMode === "gif" ? "Export GIF" : "Export PNG";
+    if (workerUrl) {
+      URL.revokeObjectURL(workerUrl);
+    }
+    setExportDialogOpen(false);
+  }
+}
+
+let exportMode = "png"; // "png" or "gif"
+let exportBaseWidth = 1920;
+let exportBaseHeight = 1080;
+
+function updateExportSizeFromScale() {
+  const pct = Math.max(25, Math.min(400, Math.round(Number(exportScaleInput.value) || 100)));
+  exportScaleInput.value = String(pct);
+  exportScaleValue.textContent = `${pct}%`;
+  exportWidthInput.value = String(Math.round(exportBaseWidth * pct / 100));
+  exportHeightInput.value = String(Math.round(exportBaseHeight * pct / 100));
+}
+
+function updateScaleFromExportSize() {
+  // Average the scale implied by width and height changes
+  const wPct = exportBaseWidth > 0 ? (Number(exportWidthInput.value) || exportBaseWidth) / exportBaseWidth * 100 : 100;
+  const hPct = exportBaseHeight > 0 ? (Number(exportHeightInput.value) || exportBaseHeight) / exportBaseHeight * 100 : 100;
+  const pct = Math.max(25, Math.min(400, Math.round((wPct + hPct) / 2 / 5) * 5));
+  exportScaleInput.value = String(pct);
+  exportScaleValue.textContent = `${pct}%`;
+}
+
+function setExportDialogOpen(isOpen, mode = "png") {
+  exportMode = mode;
+  exportDialogBackdrop.classList.toggle("is-open", isOpen);
+  exportDialogBackdrop.setAttribute("aria-hidden", isOpen ? "false" : "true");
+
+  if (isOpen) {
+    const parent = canvas.parentElement;
+    exportBaseWidth = Math.round(parent.clientWidth);
+    exportBaseHeight = Math.round(parent.clientHeight);
+    exportWidthInput.value = String(exportBaseWidth);
+    exportHeightInput.value = String(exportBaseHeight);
+    exportScaleInput.value = "100";
+    exportScaleValue.textContent = "100%";
+
+    if (mode === "gif") {
+      exportDialogTitle.textContent = "Export Animated GIF";
+      exportDialogDesc.textContent = "Cycles through each stage on the single view.";
+      exportGifOptions.hidden = false;
+      exportDialogExport.textContent = "Export GIF";
+      exportFrameCountInput.value = String(Math.max(2, state.stageCount * 8));
+      exportFrameDelayInput.value = "80";
+    } else {
+      exportDialogTitle.textContent = "Export PNG";
+      exportDialogDesc.textContent = "Downloads a high-resolution PNG of the current view.";
+      exportGifOptions.hidden = true;
+      exportDialogExport.textContent = "Export PNG";
+    }
   }
 }
 
@@ -2506,10 +2665,67 @@ function bindControls() {
   });
 
   downloadPngBtn.addEventListener("click", () => {
-    if (state.displayMode === "grid") {
-      downloadGridPng(3);
+    setExportDialogOpen(true, "png");
+  });
+
+  // ---- Animated GIF export ----
+  downloadGifBtn.addEventListener("click", () => {
+    setExportDialogOpen(true, "gif");
+  });
+
+  exportDialogCancel.addEventListener("click", () => {
+    setExportDialogOpen(false);
+  });
+
+  exportDialogBackdrop.addEventListener("click", (event) => {
+    if (event.target === exportDialogBackdrop) {
+      setExportDialogOpen(false);
+    }
+  });
+
+  exportDialogExport.addEventListener("click", () => {
+    const targetWidth = Math.max(64, Math.min(7680, Math.trunc(Number(exportWidthInput.value) || 1920)));
+    const targetHeight = Math.max(64, Math.min(7680, Math.trunc(Number(exportHeightInput.value) || 1080)));
+    exportWidthInput.value = String(targetWidth);
+    exportHeightInput.value = String(targetHeight);
+
+    if (exportMode === "gif") {
+      const frameCount = Math.max(2, Math.min(240, Math.trunc(Number(exportFrameCountInput.value) || 32)));
+      const frameDelay = Math.max(20, Math.min(2000, Math.trunc(Number(exportFrameDelayInput.value) || 80)));
+      exportFrameCountInput.value = String(frameCount);
+      exportFrameDelayInput.value = String(frameDelay);
+      exportDialogExport.disabled = true;
+      exportDialogCancel.disabled = true;
+      downloadAnimatedGif(targetWidth, targetHeight, frameCount, frameDelay);
     } else {
-      downloadHiResPng(3);
+      exportDialogExport.disabled = true;
+      exportDialogCancel.disabled = true;
+      if (state.displayMode === "grid") {
+        downloadGridPng(targetWidth, targetHeight);
+      } else {
+        downloadHiResPng(targetWidth, targetHeight);
+      }
+    }
+  });
+
+  // Scale slider: update width/height proportionally
+  exportScaleInput.addEventListener("input", () => {
+    updateExportSizeFromScale();
+  });
+
+  // Width/Height manual edit: reflect back on scale slider
+  exportWidthInput.addEventListener("input", () => {
+    updateScaleFromExportSize();
+  });
+
+  exportHeightInput.addEventListener("input", () => {
+    updateScaleFromExportSize();
+  });
+
+  // Close dialog on Escape key
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && exportDialogBackdrop.classList.contains("is-open")) {
+      setExportDialogOpen(false);
     }
   });
 

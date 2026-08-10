@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
     <style type="text/tailwindcss">
       /* ── Base ────────────────────────────────────── */
       html, body { @apply h-full m-0 p-0; }
@@ -405,15 +406,19 @@
         z-index: 10;
       }
 
-      #downloadPngBtn {
+      #downloadPngBtn,
+      #downloadGifBtn {
         @apply inline-flex items-center justify-center rounded-md border border-zinc-200 bg-white/90
                text-zinc-600 shadow-sm cursor-pointer px-2.5 py-1.5 transition-colors;
         font-family: inherit;
         backdrop-filter: blur(4px);
       }
-      #downloadPngBtn:hover:not(:disabled) { @apply bg-zinc-50; }
-      #downloadPngBtn:disabled { @apply opacity-50 cursor-wait; }
-      #downloadPngBtn svg {
+      #downloadPngBtn:hover:not(:disabled),
+      #downloadGifBtn:hover:not(:disabled) { @apply bg-zinc-50; }
+      #downloadPngBtn:disabled,
+      #downloadGifBtn:disabled { @apply opacity-50 cursor-wait; }
+      #downloadPngBtn svg,
+      #downloadGifBtn svg {
         width: 14px;
         height: 14px;
         display: block;
@@ -441,6 +446,144 @@
       .dot-origin  { background: #fbbf24; }
       .dot-hit     { background: #f43f5e; }
       .dot-path    { background: #3b82f6; }
+
+      /* ── GIF Export Dialog ──────────────────────── */
+      .gif-dialog-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(2px);
+      }
+      .gif-dialog-backdrop.is-open { display: flex; }
+
+      .gif-dialog {
+        @apply bg-white rounded-xl shadow-2xl border border-zinc-200;
+        width: min(380px, calc(100vw - 32px));
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .gif-dialog-title {
+        @apply text-base font-semibold text-zinc-900 m-0;
+      }
+
+      .gif-dialog-desc {
+        @apply text-sm text-zinc-500 m-0 leading-relaxed;
+      }
+
+      .gif-dialog-field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .gif-dialog-field label {
+        @apply text-xs font-medium text-zinc-600;
+      }
+
+      .gif-dialog-field input[type="number"] {
+        @apply w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm bg-white text-zinc-800 outline-none;
+        font-family: inherit;
+      }
+
+      .gif-dialog-field input[type="number"]:focus {
+        @apply ring-1 ring-zinc-900 border-zinc-400;
+      }
+
+      .gif-dialog-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .gif-dialog-gif-options {
+        border-top: 1px solid #e4e4e7;
+        padding-top: 4px;
+      }
+
+      .gif-dialog-gif-options[hidden] {
+        display: none !important;
+      }
+
+      .gif-dialog-scale-row {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .gif-dialog-scale-row > label {
+        @apply text-xs font-medium text-zinc-600;
+      }
+
+      .gif-dialog-scale-input {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .gif-dialog-scale-input input[type="range"] {
+        flex: 1;
+        -webkit-appearance: none;
+        appearance: none;
+        height: 20px;
+        background: transparent;
+        cursor: pointer;
+      }
+
+      .gif-dialog-scale-input input[type="range"]::-webkit-slider-runnable-track {
+        height: 3px;
+        border-radius: 9999px;
+        @apply bg-zinc-200;
+      }
+
+      .gif-dialog-scale-input input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid white;
+        @apply bg-zinc-900;
+        margin-top: -5.5px;
+        box-shadow: 0 0 0 1px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.14);
+      }
+
+      .gif-dialog-scale-input output {
+        @apply text-xs font-semibold text-zinc-800;
+        min-width: 36px;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .gif-dialog-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        padding-top: 4px;
+      }
+
+      .gif-dialog-btn {
+        @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium cursor-pointer transition-colors;
+        font-family: inherit;
+        border: 1px solid transparent;
+      }
+
+      .gif-dialog-btn--cancel {
+        @apply bg-zinc-100 text-zinc-700 border-zinc-200;
+      }
+      .gif-dialog-btn--cancel:hover { @apply bg-zinc-200; }
+
+      .gif-dialog-btn--export {
+        @apply bg-zinc-900 text-white;
+      }
+      .gif-dialog-btn--export:hover { @apply bg-zinc-800; }
+      .gif-dialog-btn--export:disabled { @apply opacity-50 cursor-wait; }
 
       /* ── Responsive ──────────────────────────────── */
       @media (max-width: 700px) {
@@ -1383,6 +1526,16 @@
                 <path d="M4 17.5h16"></path>
               </svg>
             </button>
+            <button id="downloadGifBtn" type="button" aria-label="Export animated GIF" title="Export animated GIF">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                <path d="M2 8h20"></path>
+                <path d="M2 16h20"></path>
+                <circle cx="6" cy="12" r="1.5" fill="currentColor" stroke="none"></circle>
+                <circle cx="10" cy="12" r="1.5" fill="currentColor" stroke="none"></circle>
+                <circle cx="14" cy="12" r="1.5" fill="currentColor" stroke="none"></circle>
+              </svg>
+            </button>
             <span class="canvas-toolbar-spacer" aria-hidden="true"></span>
             <button id="settingsBtn" type="button" aria-label="Open settings" aria-expanded="false">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -1403,6 +1556,47 @@
         <canvas id="scene"></canvas>
         <canvas id="gridBorderOverlay" aria-hidden="true"></canvas>
       </main>
+
+      <!-- Unified export dialog (PNG + GIF) -->
+      <div id="exportDialogBackdrop" class="gif-dialog-backdrop" aria-hidden="true">
+        <div class="gif-dialog" role="dialog" aria-modal="true" aria-labelledby="exportDialogTitle">
+          <h2 id="exportDialogTitle" class="gif-dialog-title">Export Image</h2>
+          <p id="exportDialogDesc" class="gif-dialog-desc"></p>
+          <div class="gif-dialog-row">
+            <div class="gif-dialog-field">
+              <label for="exportWidth">Width (px)</label>
+              <input id="exportWidth" type="number" min="64" max="7680" value="1920" step="1" />
+            </div>
+            <div class="gif-dialog-field">
+              <label for="exportHeight">Height (px)</label>
+              <input id="exportHeight" type="number" min="64" max="7680" value="1080" step="1" />
+            </div>
+          </div>
+          <div class="gif-dialog-scale-row">
+            <label for="exportScale">Scale (%)</label>
+            <div class="gif-dialog-scale-input">
+              <input id="exportScale" type="range" min="25" max="400" value="100" step="5" />
+              <output id="exportScaleValue" for="exportScale">100%</output>
+            </div>
+          </div>
+          <div id="exportGifOptions" class="gif-dialog-gif-options" hidden>
+            <div class="gif-dialog-row">
+              <div class="gif-dialog-field">
+                <label for="exportFrameCount">Number of frames</label>
+                <input id="exportFrameCount" type="number" min="2" max="240" value="32" step="1" />
+              </div>
+              <div class="gif-dialog-field">
+                <label for="exportFrameDelay">Delay per frame (ms)</label>
+                <input id="exportFrameDelay" type="number" min="20" max="2000" value="80" step="10" />
+              </div>
+            </div>
+          </div>
+          <div class="gif-dialog-actions">
+            <button id="exportDialogCancel" type="button" class="gif-dialog-btn gif-dialog-btn--cancel">Cancel</button>
+            <button id="exportDialogExport" type="button" class="gif-dialog-btn gif-dialog-btn--export">Export PNG</button>
+          </div>
+        </div>
+      </div>
 
     </div>
     <script type="module" src="./main.js"></script>
