@@ -743,12 +743,12 @@ const initialArrowShaft = new THREE.Mesh(
   new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(0, 0.001, 0)], false), 8, 0.01, 10, false),
   new THREE.MeshBasicMaterial({ color: state.initialArrowColor, transparent: true, opacity: 1.0, depthWrite: false, depthTest: false })
 );
-initialArrowShaft.renderOrder = 6;
+initialArrowShaft.renderOrder = 4;
 const initialArrowHead = new THREE.Mesh(
   new THREE.ConeGeometry(state.initialArrowHeadWidth, state.initialArrowHeadLength, 16, 1),
   new THREE.MeshBasicMaterial({ color: state.initialArrowColor, transparent: true, opacity: 1.0, depthWrite: false, depthTest: false })
 );
-initialArrowHead.renderOrder = 6;
+initialArrowHead.renderOrder = 4;
 initialArrow.add(initialArrowShaft, initialArrowHead);
 scene.add(initialArrow);
 
