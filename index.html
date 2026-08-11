@@ -406,23 +406,58 @@
         z-index: 10;
       }
 
-      #downloadPngBtn,
-      #downloadGifBtn {
+      .export-menu {
+        position: relative;
+        pointer-events: auto;
+      }
+
+      #downloadMenuBtn {
         @apply inline-flex items-center justify-center rounded-md border border-zinc-200 bg-white/90
                text-zinc-600 shadow-sm cursor-pointer px-2.5 py-1.5 transition-colors;
         font-family: inherit;
         backdrop-filter: blur(4px);
       }
-      #downloadPngBtn:hover:not(:disabled),
-      #downloadGifBtn:hover:not(:disabled) { @apply bg-zinc-50; }
-      #downloadPngBtn:disabled,
-      #downloadGifBtn:disabled { @apply opacity-50 cursor-wait; }
-      #downloadPngBtn svg,
-      #downloadGifBtn svg {
+      #downloadMenuBtn:hover:not(:disabled) { @apply bg-zinc-50; }
+      #downloadMenuBtn:disabled { @apply opacity-50 cursor-wait; }
+      #downloadMenuBtn svg {
         width: 14px;
         height: 14px;
         display: block;
         flex-shrink: 0;
+      }
+
+      .export-menu-list {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        min-width: 170px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 6px;
+        border: 1px solid rgba(228, 228, 231, 0.92);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.98);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        backdrop-filter: blur(8px);
+        z-index: 25;
+      }
+
+      .export-menu-list[hidden] {
+        display: none;
+      }
+
+      .export-menu-item {
+        @apply w-full text-left rounded-md border border-transparent bg-transparent text-zinc-700 px-3 py-2 text-sm cursor-pointer;
+        font-family: inherit;
+      }
+
+      .export-menu-item:hover:not(:disabled) {
+        @apply bg-zinc-50 border-zinc-200;
+      }
+
+      .export-menu-item:disabled {
+        @apply opacity-50 cursor-wait;
       }
 
       #settingsBtn {
@@ -1519,23 +1554,20 @@
       <main class="scene-wrap">
         <div class="scene-ui">
           <div class="canvas-toolbar" aria-label="Canvas actions">
-            <button id="downloadPngBtn" type="button" aria-label="Download PNG" title="Download PNG">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M12 3v11"></path>
-                <path d="M8 10.5 12 14.5 16 10.5"></path>
-                <path d="M4 17.5h16"></path>
-              </svg>
-            </button>
-            <button id="downloadGifBtn" type="button" aria-label="Export animated GIF" title="Export animated GIF">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
-                <path d="M2 8h20"></path>
-                <path d="M2 16h20"></path>
-                <circle cx="6" cy="12" r="1.5" fill="currentColor" stroke="none"></circle>
-                <circle cx="10" cy="12" r="1.5" fill="currentColor" stroke="none"></circle>
-                <circle cx="14" cy="12" r="1.5" fill="currentColor" stroke="none"></circle>
-              </svg>
-            </button>
+            <div class="export-menu" aria-label="Download options">
+              <button id="downloadMenuBtn" type="button" aria-label="Download options" aria-haspopup="true" aria-expanded="false" title="Download options">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M12 3v11"></path>
+                  <path d="M8 10.5 12 14.5 16 10.5"></path>
+                  <path d="M4 17.5h16"></path>
+                </svg>
+              </button>
+              <div id="downloadMenu" class="export-menu-list" role="menu" hidden>
+                <button id="downloadPngBtn" class="export-menu-item" type="button" role="menuitem">Download PNG</button>
+                <button id="downloadGifBtn" class="export-menu-item" type="button" role="menuitem">Export Animated GIF</button>
+                <button id="downloadWebpBtn" class="export-menu-item" type="button" role="menuitem">Export Animated WebP</button>
+              </div>
+            </div>
             <span class="canvas-toolbar-spacer" aria-hidden="true"></span>
             <button id="settingsBtn" type="button" aria-label="Open settings" aria-expanded="false">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">

@@ -4,8 +4,11 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 const canvas = document.querySelector("#scene");
 const stageBar = document.querySelector(".stage-list");
 const stageColorList = document.querySelector("#stageColorList");
+const downloadMenuBtn = document.querySelector("#downloadMenuBtn");
+const downloadMenu = document.querySelector("#downloadMenu");
 const downloadPngBtn = document.querySelector("#downloadPngBtn");
 const downloadGifBtn = document.querySelector("#downloadGifBtn");
+const downloadWebpBtn = document.querySelector("#downloadWebpBtn");
 const exportDialogBackdrop = document.querySelector("#exportDialogBackdrop");
 const exportDialogTitle = document.querySelector("#exportDialogTitle");
 const exportDialogDesc = document.querySelector("#exportDialogDesc");
@@ -471,6 +474,7 @@ let stageButtons = [];
 let activeGridCameraCell = 0;
 let gridCellViews = [];
 let isExportInProgress = false;
+let cachedWebpEncoderModule = null;
 
 function createGridViewFromCurrentCamera() {
   return {
@@ -1418,6 +1422,14 @@ function buildConfigSnapshot() {
 function updateScene() {
   const dirs = getStageDirections();
   const maxVisibleStage = Math.max(1, Math.round(state.animatedStage));
+  const dotLerp = stageLerpInfo();
+  let landedDotStage = THREE.MathUtils.clamp(dotLerp.lower, 1, state.stageCount);
+  // Promote only near forward destination arrival so dots do not lag at landing,
+  // while still disappearing promptly when reversing.
+  const approachingForwardDestination = state.targetStage >= dotLerp.upper && dotLerp.mix >= 0.85;
+  if (approachingForwardDestination) {
+    landedDotStage = THREE.MathUtils.clamp(dotLerp.upper, 1, state.stageCount);
+  }
   // Cone visibility is handled separately from spheres so backward jumps can hide
   // intermediate "future" cones while still allowing the single departing cone to animate out.
   const isForward = state.targetStage > state.animatedStage;
@@ -1539,7 +1551,7 @@ function updateScene() {
   hitDots.forEach((dot, i) => {
     dot.material.color.copy(state.hitDotColor);
     dot.position.copy(stagePoints[i]);
-    dot.visible = i + 1 <= maxVisibleStage;
+    dot.visible = i + 1 <= landedDotStage;
   });
 
   originDotOutline.position.copy(originDot.position);
@@ -1552,7 +1564,7 @@ function updateScene() {
     outline.position.copy(stagePoints[i]);
     outline.scale.setScalar((state.hitDotSize + state.dotOutlineThickness) / state.hitDotSize);
     outline.material.color.copy(state.dotOutlineColor);
-    outline.visible = state.showDotOutline && stage <= maxVisibleStage;
+    outline.visible = state.showDotOutline && stage <= landedDotStage;
   });
 
   const currentRadius = getLerpedRadius();
@@ -2541,6 +2553,20 @@ function timestampForFilename() {
   return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
 }
 
+function setDownloadMenuOpen(isOpen) {
+  const next = Boolean(isOpen) && !downloadMenuBtn.disabled;
+  downloadMenu.hidden = !next;
+  downloadMenuBtn.setAttribute("aria-expanded", next ? "true" : "false");
+}
+
+function setExportEntryButtonsDisabled(isDisabled) {
+  const disabled = Boolean(isDisabled);
+  downloadMenuBtn.disabled = disabled;
+  downloadPngBtn.disabled = disabled;
+  downloadGifBtn.disabled = disabled;
+  downloadWebpBtn.disabled = disabled;
+}
+
 function triggerDownloadUrl(url, filename) {
   const ua = navigator.userAgent || "";
   const isSafari = /^((?!chrome|android|crios|fxios|edgios).)*safari/i.test(ua);
@@ -2655,7 +2681,7 @@ function downloadHiResPng(targetWidth, targetHeight) {
   const previousSize = new THREE.Vector2();
   renderer.getSize(previousSize);
   const previousPixelRatio = renderer.getPixelRatio();
-  downloadPngBtn.disabled = true;
+  setExportEntryButtonsDisabled(true);
   isExportInProgress = true;
 
   try {
@@ -2686,7 +2712,7 @@ function downloadHiResPng(targetWidth, targetHeight) {
     updateScene();
     controls.update();
     renderer.render(scene, camera);
-    downloadPngBtn.disabled = false;
+    setExportEntryButtonsDisabled(false);
     exportDialogExport.disabled = false;
     exportDialogCancel.disabled = false;
     isExportInProgress = false;
@@ -2702,7 +2728,7 @@ function downloadGridPng(targetWidth, targetHeight) {
   renderer.getSize(previousSize);
   const previousPixelRatio = renderer.getPixelRatio();
 
-  downloadPngBtn.disabled = true;
+  setExportEntryButtonsDisabled(true);
   isExportInProgress = true;
 
   try {
@@ -2775,7 +2801,7 @@ function downloadGridPng(targetWidth, targetHeight) {
     updateScene();
     controls.update();
     renderer.render(scene, camera);
-    downloadPngBtn.disabled = false;
+    setExportEntryButtonsDisabled(false);
     exportDialogExport.disabled = false;
     exportDialogCancel.disabled = false;
     isExportInProgress = false;
@@ -2796,8 +2822,7 @@ async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, fps, h
   const previousPixelRatio = renderer.getPixelRatio();
   const labelScale = Math.max(0.25, targetHeight / Math.max(1, previousSize.y));
 
-  downloadGifBtn.disabled = true;
-  downloadPngBtn.disabled = true;
+  setExportEntryButtonsDisabled(true);
   isExportInProgress = true;
 
   let workerUrl = null;
@@ -2920,11 +2945,14 @@ async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, fps, h
     updateScene();
     controls.update();
     renderer.render(scene, camera);
-    downloadGifBtn.disabled = false;
-    downloadPngBtn.disabled = false;
+    setExportEntryButtonsDisabled(false);
     exportDialogExport.disabled = false;
     exportDialogCancel.disabled = false;
-    exportDialogExport.textContent = exportMode === "gif" ? "Export GIF" : "Export PNG";
+    exportDialogExport.textContent = exportMode === "gif"
+      ? "Export GIF"
+      : exportMode === "webp"
+        ? "Export WebP"
+        : "Export PNG";
     isExportInProgress = false;
     if (workerUrl) {
       URL.revokeObjectURL(workerUrl);
@@ -2935,7 +2963,169 @@ async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, fps, h
   }
 }
 
-let exportMode = "png"; // "png" or "gif"
+async function getWebpEncoderModule() {
+  if (cachedWebpEncoderModule) {
+    return cachedWebpEncoderModule;
+  }
+
+  const mod = await import("https://cdn.jsdelivr.net/npm/wasm-webp@0.1.0/+esm");
+  if (!mod || typeof mod.encodeAnimation !== "function") {
+    throw new Error("Animated WebP encoder is unavailable in this browser.");
+  }
+
+  cachedWebpEncoderModule = mod;
+  return mod;
+}
+
+function buildAnimatedStageSequence(stageCount, frameCount, holdFrames) {
+  const sampleStageValues = [];
+  for (let i = 0; i < frameCount; i += 1) {
+    const t = frameCount > 1 ? i / (frameCount - 1) : 0;
+    sampleStageValues.push(1 + t * (stageCount - 1));
+  }
+
+  const holdMap = new Map();
+  if (holdFrames > 0 && stageCount >= 1) {
+    for (let stage = 1; stage <= stageCount; stage += 1) {
+      const holdIdx = stageCount === 1
+        ? 0
+        : Math.round(((stage - 1) / (stageCount - 1)) * (frameCount - 1));
+      if (!holdMap.has(holdIdx)) {
+        holdMap.set(holdIdx, []);
+      }
+      holdMap.get(holdIdx).push(stage);
+    }
+  }
+
+  const renderStageValues = [];
+  for (let i = 0; i < sampleStageValues.length; i += 1) {
+    renderStageValues.push(sampleStageValues[i]);
+    const holdsForIndex = holdMap.get(i) || [];
+    for (const heldStage of holdsForIndex) {
+      for (let h = 0; h < holdFrames; h += 1) {
+        renderStageValues.push(heldStage);
+      }
+    }
+  }
+
+  return renderStageValues;
+}
+
+async function downloadAnimatedWebp(targetWidth, targetHeight, frameCount, fps, holdFrames) {
+  targetWidth = Math.max(1, Math.round(targetWidth));
+  targetHeight = Math.max(1, Math.round(targetHeight));
+  frameCount = Math.max(2, Math.round(frameCount));
+  fps = Math.max(1, Math.round(fps));
+  holdFrames = Math.max(0, Math.round(holdFrames));
+  const frameDelayMs = Math.max(1, Math.round(1000 / fps));
+
+  const previousSize = new THREE.Vector2();
+  renderer.getSize(previousSize);
+  const previousPixelRatio = renderer.getPixelRatio();
+  const labelScale = Math.max(0.25, targetHeight / Math.max(1, previousSize.y));
+
+  setExportEntryButtonsDisabled(true);
+  isExportInProgress = true;
+
+  let exportSucceeded = false;
+
+  try {
+    const { encodeAnimation } = await getWebpEncoderModule();
+
+    renderer.setPixelRatio(1);
+    renderer.setSize(targetWidth, targetHeight, false);
+    renderer.setScissorTest(false);
+    renderer.setViewport(0, 0, targetWidth, targetHeight);
+    const tempCamera = createRenderCameraForAspect(targetWidth / targetHeight);
+
+    const savedTargetStage = state.targetStage;
+    const savedAnimatedStage = state.animatedStage;
+    const savedTransitionFromStage = state.transitionFromStage;
+
+    const offscreen = document.createElement("canvas");
+    offscreen.width = targetWidth;
+    offscreen.height = targetHeight;
+    const ctx = offscreen.getContext("2d", { willReadFrequently: true });
+
+    const stageCount = state.stageCount;
+    const renderStageValues = buildAnimatedStageSequence(stageCount, frameCount, holdFrames);
+    const totalRenderFrames = renderStageValues.length;
+    const webpFrames = [];
+
+    for (let i = 0; i < totalRenderFrames; i += 1) {
+      const stageValue = renderStageValues[i];
+
+      state.transitionFromStage = THREE.MathUtils.clamp(Math.floor(stageValue), 1, stageCount);
+      state.targetStage = THREE.MathUtils.clamp(Math.ceil(stageValue), 1, stageCount);
+      state.animatedStage = stageValue;
+      updateScene();
+      renderer.render(scene, tempCamera);
+
+      ctx.clearRect(0, 0, targetWidth, targetHeight);
+      ctx.drawImage(renderer.domElement, 0, 0);
+      drawPointLabels(
+        ctx,
+        tempCamera,
+        { x: 0, y: 0, width: targetWidth, height: targetHeight },
+        stageValue,
+        labelScale
+      );
+
+      const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+      webpFrames.push({
+        data: new Uint8Array(imageData.data),
+        duration: frameDelayMs,
+        config: { lossless: 0, quality: 90 }
+      });
+
+      if ((i + 1) % 4 === 0 || i === totalRenderFrames - 1) {
+        exportDialogExport.textContent = `Rendering... ${i + 1}/${totalRenderFrames}`;
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    }
+
+    state.targetStage = savedTargetStage;
+    state.animatedStage = savedAnimatedStage;
+    state.transitionFromStage = savedTransitionFromStage;
+    updateScene();
+
+    exportDialogExport.textContent = "Encoding WebP...";
+    const webpData = await encodeAnimation(targetWidth, targetHeight, true, webpFrames);
+    if (!webpData || !webpData.length) {
+      throw new Error("WebP encoder returned no output.");
+    }
+
+    const blob = new Blob([webpData], { type: "image/webp" });
+    const url = URL.createObjectURL(blob);
+    triggerDownloadUrl(url, `creative-process-${timestampForFilename()}.webp`);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    exportSucceeded = true;
+  } catch (error) {
+    console.error("Animated WebP export failed", error);
+    const message = error instanceof Error ? error.message : "unknown error";
+    alert(`Animated WebP export failed: ${message}`);
+  } finally {
+    renderer.setPixelRatio(previousPixelRatio);
+    renderer.setSize(previousSize.x, previousSize.y, false);
+    updateScene();
+    controls.update();
+    renderer.render(scene, camera);
+    setExportEntryButtonsDisabled(false);
+    exportDialogExport.disabled = false;
+    exportDialogCancel.disabled = false;
+    exportDialogExport.textContent = exportMode === "gif"
+      ? "Export GIF"
+      : exportMode === "webp"
+        ? "Export WebP"
+        : "Export PNG";
+    isExportInProgress = false;
+    if (exportSucceeded) {
+      setExportDialogOpen(false);
+    }
+  }
+}
+
+let exportMode = "png"; // "png", "gif", or "webp"
 let exportBaseWidth = 1920;
 let exportBaseHeight = 1080;
 
@@ -2958,6 +3148,9 @@ function updateScaleFromExportSize() {
 
 function setExportDialogOpen(isOpen, mode = "png") {
   exportMode = mode;
+  if (isOpen) {
+    setDownloadMenuOpen(false);
+  }
   exportDialogBackdrop.classList.toggle("is-open", isOpen);
   exportDialogBackdrop.setAttribute("aria-hidden", isOpen ? "false" : "true");
 
@@ -2970,11 +3163,13 @@ function setExportDialogOpen(isOpen, mode = "png") {
     exportScaleInput.value = "100";
     exportScaleValue.textContent = "100%";
 
-    if (mode === "gif") {
-      exportDialogTitle.textContent = "Export Animated GIF";
-      exportDialogDesc.textContent = "Cycles through each stage on the single view.";
+    if (mode === "gif" || mode === "webp") {
+      exportDialogTitle.textContent = mode === "gif" ? "Export Animated GIF" : "Export Animated WebP";
+      exportDialogDesc.textContent = mode === "gif"
+        ? "Cycles through each stage on the single view."
+        : "Exports an animated WebP using browser-side encoding.";
       exportGifOptions.hidden = false;
-      exportDialogExport.textContent = "Export GIF";
+      exportDialogExport.textContent = mode === "gif" ? "Export GIF" : "Export WebP";
       exportFrameCountInput.value = "72";
       exportFpsInput.value = "24";
       exportHoldFramesInput.value = "0";
@@ -3006,13 +3201,31 @@ function bindControls() {
     syncConfigPanelVisibility();
   });
 
+  downloadMenuBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setDownloadMenuOpen(downloadMenu.hidden);
+  });
+
   downloadPngBtn.addEventListener("click", () => {
+    setDownloadMenuOpen(false);
     setExportDialogOpen(true, "png");
   });
 
   // ---- Animated GIF export ----
   downloadGifBtn.addEventListener("click", () => {
+    setDownloadMenuOpen(false);
     setExportDialogOpen(true, "gif");
+  });
+
+  downloadWebpBtn.addEventListener("click", () => {
+    setDownloadMenuOpen(false);
+    setExportDialogOpen(true, "webp");
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!downloadMenu.hidden && !event.target.closest(".export-menu")) {
+      setDownloadMenuOpen(false);
+    }
   });
 
   exportDialogCancel.addEventListener("click", () => {
@@ -3031,7 +3244,7 @@ function bindControls() {
     exportWidthInput.value = String(targetWidth);
     exportHeightInput.value = String(targetHeight);
 
-    if (exportMode === "gif") {
+    if (exportMode === "gif" || exportMode === "webp") {
       const frameCount = Math.max(2, Math.min(2000, Math.trunc(Number(exportFrameCountInput.value) || 72)));
       const fps = Math.max(1, Math.min(120, Math.trunc(Number(exportFpsInput.value) || 24)));
       const holdFrames = Math.max(0, Math.min(240, Math.trunc(Number(exportHoldFramesInput.value) || 0)));
@@ -3040,7 +3253,11 @@ function bindControls() {
       exportHoldFramesInput.value = String(holdFrames);
       exportDialogExport.disabled = true;
       exportDialogCancel.disabled = true;
-      downloadAnimatedGif(targetWidth, targetHeight, frameCount, fps, holdFrames);
+      if (exportMode === "webp") {
+        downloadAnimatedWebp(targetWidth, targetHeight, frameCount, fps, holdFrames);
+      } else {
+        downloadAnimatedGif(targetWidth, targetHeight, frameCount, fps, holdFrames);
+      }
     } else {
       exportDialogExport.disabled = true;
       exportDialogCancel.disabled = true;
@@ -3068,6 +3285,9 @@ function bindControls() {
 
   // Close dialog on Escape key
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !downloadMenu.hidden) {
+      setDownloadMenuOpen(false);
+    }
     if (event.key === "Escape" && exportDialogBackdrop.classList.contains("is-open")) {
       setExportDialogOpen(false);
     }
