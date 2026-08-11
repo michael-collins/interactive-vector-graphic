@@ -1145,7 +1145,18 @@ function getStageDirections() {
 function stageLerpInfo() {
   const lower = Math.floor(state.animatedStage);
   const upper = Math.min(state.stageCount, lower + 1);
-  const mix = THREE.MathUtils.clamp(state.animatedStage - lower, 0, 1);
+  const rawMix = THREE.MathUtils.clamp(state.animatedStage - lower, 0, 1);
+
+  let mix = rawMix;
+  if (state.targetStage > state.animatedStage + 1e-6) {
+    // Forward: ease 0 -> 1 across the active segment.
+    mix = THREE.MathUtils.smoothstep(rawMix, 0, 1);
+  } else if (state.targetStage < state.animatedStage - 1e-6) {
+    // Backward: mirror the segment easing used by cone/ring transitions.
+    const backwardSegmentProgress = 1 - rawMix;
+    mix = 1 - THREE.MathUtils.smoothstep(backwardSegmentProgress, 0, 1);
+  }
+
   return { lower, upper, mix };
 }
 
