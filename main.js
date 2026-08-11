@@ -1548,15 +1548,24 @@ function updateScene() {
   }
 
   const initialDirection = dirs[0] ?? baseDirection;
-  const initialRadius = stageRadii[Math.max(0, maxVisibleStage - 1)] ?? 0;
-  initialArrow.visible = state.showInitialArrow && state.targetStage > 1;
-  if (state.showInitialArrow && state.targetStage > 1) {
+  const initialRadius = currentRadius;
+  let initialArrowFade = 1;
+  const isForwardOneToTwo = isForward && state.transitionFromStage === 1 && state.targetStage >= 2;
+  const isBackwardTwoToOne = !isForward && state.transitionFromStage === 2 && state.targetStage === 1;
+  if (isForwardOneToTwo && state.animatedStage < 2) {
+    initialArrowFade = THREE.MathUtils.clamp(forwardT, 0, 1);
+  } else if (isBackwardTwoToOne && state.animatedStage > 1) {
+    initialArrowFade = THREE.MathUtils.clamp(1 - backwardT, 0, 1);
+  }
+  const showAnimatedInitialArrow = state.targetStage > 1 || state.animatedStage > 1.001;
+  initialArrow.visible = state.showInitialArrow && showAnimatedInitialArrow && initialArrowFade > 0.001;
+  if (state.showInitialArrow && showAnimatedInitialArrow && initialArrowFade > 0.001) {
     const initialLength = initialRadius + state.initialArrowExtension;
     const shaftEnd = initialDirection.clone().multiplyScalar(Math.max(0, initialLength - state.initialArrowHeadLength));
-    updateTubeMesh(initialArrowShaft, [new THREE.Vector3(), shaftEnd], state.initialArrowThickness, state.initialArrowColor, state.initialArrowOpacity, false);
+    updateTubeMesh(initialArrowShaft, [new THREE.Vector3(), shaftEnd], state.initialArrowThickness, state.initialArrowColor, state.initialArrowOpacity * initialArrowFade, false);
     initialArrowShaft.material.depthTest = false;
     initialArrowHead.material.color.copy(state.initialArrowColor);
-    initialArrowHead.material.opacity = state.initialArrowOpacity;
+    initialArrowHead.material.opacity = state.initialArrowOpacity * initialArrowFade;
     initialArrowHead.position.copy(initialDirection).multiplyScalar(initialLength - state.initialArrowHeadLength / 2);
     initialArrowHead.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), initialDirection);
   }
