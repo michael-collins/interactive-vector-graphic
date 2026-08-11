@@ -1413,27 +1413,84 @@ function updateScene() {
   const coneBaseVisibleStage = isForward
     ? maxVisibleStage
     : state.targetStage;
-  // Do not show an extra departing cone for single-step backward moves (e.g. 4 -> 3).
+  // Keep the departing stage visible while stepping backward so it can animate out.
   const showDeparting = !isForward
-    && backwardStepCount > 1
+    && backwardStepCount > 0
     && departingStage > coneBaseVisibleStage
     && state.animatedStage > departingStage - 1;
   const animatedConeStage = isForward ? Math.ceil(state.animatedStage) : (showDeparting ? departingStage : coneBaseVisibleStage);
   const coneAnimMix = state.animatedStage - Math.floor(state.animatedStage);
-  const isTransitioning = coneAnimMix > 0.005 && coneAnimMix < 0.999;
-  const shouldAnimateCone = isTransitioning && (isForward || showDeparting);
-  const forwardT = THREE.MathUtils.smoothstep(coneAnimMix, 0.04, 0.92);
-  const backwardT = THREE.MathUtils.smoothstep(1 - coneAnimMix, 0.04, 0.92);
+  const shouldAnimateCone = isForward || showDeparting;
+  const forwardSegmentProgress = THREE.MathUtils.clamp(coneAnimMix, 0, 1);
+  const backwardSegmentProgress = THREE.MathUtils.clamp(departingStage - state.animatedStage, 0, 1);
+  const forwardT = THREE.MathUtils.smoothstep(forwardSegmentProgress, 0, 1);
+  const backwardT = THREE.MathUtils.smoothstep(backwardSegmentProgress, 0, 1);
   const animatedConeProgress = shouldAnimateCone ? (isForward ? forwardT : backwardT) : 1;
   const stagePoints = stageRadii.map((r, i) => new THREE.Vector3().copy(dirs[i]).multiplyScalar(r));
+  const forwardLandedStage = isForward
+    ? THREE.MathUtils.clamp(
+      Math.floor(state.animatedStage),
+      1,
+      Math.max(1, state.targetStage - 1)
+    )
+    : null;
+
+  const getSphereRevealProgress = (stage) => {
+    if (isForward) {
+      if (stage <= forwardLandedStage) {
+        return 1;
+      }
+
+      const incomingStage = forwardLandedStage + 1;
+      if (stage === incomingStage) {
+        return forwardT;
+      }
+
+      return 0;
+    }
+
+    if (stage <= state.targetStage) {
+      return 1;
+    }
+
+    if (showDeparting && stage === departingStage) {
+      return 1 - backwardT;
+    }
+
+    return 0;
+  };
+
+  const getSphereAnimatedRadius = (stage, index, revealProgress) => {
+    if (revealProgress <= 0.001) {
+      return 0;
+    }
+
+    if (isForward) {
+      const incomingStage = forwardLandedStage + 1;
+      if (stage === incomingStage) {
+        const fromIdx = Math.max(0, forwardLandedStage - 1);
+        const toIdx = index;
+        return THREE.MathUtils.lerp(stageRadii[fromIdx], stageRadii[toIdx], revealProgress);
+      }
+      return stageRadii[index];
+    }
+
+    if (showDeparting && stage === departingStage) {
+      const fromIdx = index;
+      const toIdx = Math.max(0, index - 1);
+      return THREE.MathUtils.lerp(stageRadii[toIdx], stageRadii[fromIdx], revealProgress);
+    }
+
+    return stageRadii[index];
+  };
 
   sphereMeshes.forEach((mesh, index) => {
     const stage = index + 1;
-    const activeDistance = Math.abs(state.animatedStage - stage);
-    const stageAnimScale = THREE.MathUtils.lerp(0.92, 1, THREE.MathUtils.clamp(1 - activeDistance, 0, 1));
-    mesh.visible = state.showSpheres && stage <= maxVisibleStage;
-    mesh.scale.setScalar(stageRadii[index] * stageAnimScale);
-    mesh.material.opacity = state.sphereOpacity * THREE.MathUtils.clamp(1 - activeDistance * 0.45, 0.2, 1);
+    const revealProgress = THREE.MathUtils.clamp(getSphereRevealProgress(stage), 0, 1);
+    const animatedRadius = getSphereAnimatedRadius(stage, index, revealProgress);
+    mesh.visible = state.showSpheres && revealProgress > 0.001;
+    mesh.scale.setScalar(animatedRadius);
+    mesh.material.opacity = state.sphereOpacity * THREE.MathUtils.lerp(0.35, 1, revealProgress);
     if (mesh.material.color) {
       mesh.material.color.copy(state.sphereStageColors[index]);
     }
@@ -1441,17 +1498,17 @@ function updateScene() {
 
   sphereOutlineMeshes.forEach((outline, index) => {
     const stage = index + 1;
-    const activeDistance = Math.abs(state.animatedStage - stage);
-    const stageAnimScale = THREE.MathUtils.lerp(0.92, 1, THREE.MathUtils.clamp(1 - activeDistance, 0, 1));
-    const visible = state.showSpheres && stage <= maxVisibleStage && state.showToonOutline;
+    const revealProgress = THREE.MathUtils.clamp(getSphereRevealProgress(stage), 0, 1);
+    const animatedRadius = getSphereAnimatedRadius(stage, index, revealProgress);
+    const visible = state.showSpheres && revealProgress > 0.001 && state.showToonOutline;
     outline.visible = visible;
     outline.scale.setScalar(
       state.toonOutlineXray
-        ? stageRadii[index] * stageAnimScale
-        : (stageRadii[index] + state.toonOutlineThickness) * stageAnimScale
+        ? animatedRadius
+        : animatedRadius + state.toonOutlineThickness
     );
-    updateSphereOutlineMaterialProps(outline.material, stageRadii[index] * stageAnimScale);
-    outline.material.opacity = stage === state.targetStage ? 1 : 0.78;
+    updateSphereOutlineMaterialProps(outline.material, animatedRadius);
+    outline.material.opacity = THREE.MathUtils.lerp(0.4, 1, revealProgress);
   });
 
   originDot.material.color.copy(state.originDotColor);
@@ -1504,15 +1561,22 @@ function updateScene() {
     initialArrowHead.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), initialDirection);
   }
 
-  const stagePointsVisible = stagePoints.slice(0, Math.max(1, maxVisibleStage));
   const origin = new THREE.Vector3();
+  const landedStageForPath = THREE.MathUtils.clamp(Math.floor(state.animatedStage), 1, state.stageCount);
+  const landedPathPoints = stagePoints.slice(0, landedStageForPath);
+  const connectorPoints = [origin, ...landedPathPoints];
 
-  const hasSequentialSegments = stagePointsVisible.length > 0;
+  const lastLandedPoint = landedPathPoints[landedPathPoints.length - 1] ?? origin;
+  const appendCurrentTail = currentPoint.distanceToSquared(lastLandedPoint) > 1e-8;
+  if (appendCurrentTail) {
+    connectorPoints.push(currentPoint);
+  }
+
+  const hasSequentialSegments = connectorPoints.length >= 2;
   pathConnector.visible = state.showConnectors && hasSequentialSegments;
 
   if (hasSequentialSegments) {
-    const sequencePoints = [origin, ...stagePointsVisible];
-    updateTubeMesh(pathConnector, sequencePoints, state.connectorThickness, state.connectorColor, state.connectorOpacity, false);
+    updateTubeMesh(pathConnector, connectorPoints, state.connectorThickness, state.connectorColor, state.connectorOpacity, false);
   }
 
   const fromDot = state.coneOriginMode === "dot";
@@ -2440,6 +2504,113 @@ function timestampForFilename() {
   return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
 }
 
+function triggerDownloadUrl(url, filename) {
+  const ua = navigator.userAgent || "";
+  const isSafari = /^((?!chrome|android|crios|fxios|edgios).)*safari/i.test(ua);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.rel = "noopener";
+  if (isSafari) {
+    // Safari can ignore download for async-triggered links; opening in a tab is a reliable fallback.
+    link.target = "_blank";
+  }
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function downloadCanvasAsPng(canvasToDownload, filename) {
+  if (canvasToDownload.toBlob) {
+    canvasToDownload.toBlob((blob) => {
+      if (!blob) {
+        const dataUrl = canvasToDownload.toDataURL("image/png");
+        triggerDownloadUrl(dataUrl, filename);
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      triggerDownloadUrl(url, filename);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, "image/png");
+    return;
+  }
+
+  const dataUrl = canvasToDownload.toDataURL("image/png");
+  triggerDownloadUrl(dataUrl, filename);
+}
+
+async function fetchGifWorkerBlobUrl() {
+  const workerSources = [
+    "https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js",
+    "https://unpkg.com/gif.js@0.2.0/dist/gif.worker.js"
+  ];
+
+  let lastError = null;
+  for (const workerSource of workerSources) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+    try {
+      const response = await fetch(workerSource, {
+        signal: controller.signal,
+        cache: "force-cache"
+      });
+      if (!response.ok) {
+        throw new Error(`Worker fetch failed (${response.status})`);
+      }
+
+      const blob = await response.blob();
+      if (!blob || blob.size === 0) {
+        throw new Error("Worker fetch returned an empty response");
+      }
+
+      return URL.createObjectURL(blob);
+    } catch (error) {
+      lastError = error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  throw lastError || new Error("Unable to fetch GIF worker script");
+}
+
+function renderGifWithTimeout(gif, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (handler, value) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timeoutId);
+      handler(value);
+    };
+
+    const timeoutId = setTimeout(() => {
+      if (typeof gif.abort === "function") {
+        gif.abort();
+      }
+      finish(reject, new Error(`GIF encoding timed out after ${Math.round(timeoutMs / 1000)}s`));
+    }, timeoutMs);
+
+    gif.on("finished", (blob) => finish(resolve, blob));
+    gif.on("abort", () => finish(reject, new Error("GIF encoding aborted")));
+    gif.on("error", (error) => {
+      const message = error && error.message ? error.message : String(error || "unknown error");
+      finish(reject, new Error(`GIF encoding failed: ${message}`));
+    });
+
+    try {
+      gif.render();
+    } catch (error) {
+      finish(reject, error instanceof Error ? error : new Error("GIF render failed"));
+    }
+  });
+}
+
 function downloadHiResPng(targetWidth, targetHeight) {
   targetWidth = Math.max(1, Math.round(targetWidth));
   targetHeight = Math.max(1, Math.round(targetHeight));
@@ -2470,13 +2641,7 @@ function downloadHiResPng(targetWidth, targetHeight) {
       1
     );
 
-    const dataUrl = offscreen.toDataURL("image/png");
-    const link = document.createElement("a");
-    link.href = dataUrl;
-    link.download = `creative-process-${timestampForFilename()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCanvasAsPng(offscreen, `creative-process-${timestampForFilename()}.png`);
   } finally {
     renderer.setPixelRatio(previousPixelRatio);
     renderer.setSize(previousSize.x, previousSize.y, false);
@@ -2563,13 +2728,7 @@ function downloadGridPng(targetWidth, targetHeight) {
 
     drawGridPointLabels(ctx, layout, 1);
 
-    const dataUrl = offscreen.toDataURL("image/png");
-    const link = document.createElement("a");
-    link.href = dataUrl;
-    link.download = `creative-process-grid-${timestampForFilename()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCanvasAsPng(offscreen, `creative-process-grid-${timestampForFilename()}.png`);
   } finally {
     renderer.setPixelRatio(previousPixelRatio);
     renderer.setSize(previousSize.x, previousSize.y, false);
@@ -2590,11 +2749,13 @@ async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, frameD
   const previousSize = new THREE.Vector2();
   renderer.getSize(previousSize);
   const previousPixelRatio = renderer.getPixelRatio();
+  const labelScale = Math.max(0.25, targetHeight / Math.max(1, previousSize.y));
 
   downloadGifBtn.disabled = true;
   downloadPngBtn.disabled = true;
 
   let workerUrl = null;
+  let exportSucceeded = false;
 
   try {
     renderer.setPixelRatio(1);
@@ -2610,10 +2771,8 @@ async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, frameD
     offscreen.height = targetHeight;
     const ctx = offscreen.getContext("2d");
 
-    // Create the GIF encoder – fetch worker script as blob URL to avoid CORS
-    const workerResp = await fetch("https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js");
-    const workerBlob = await workerResp.blob();
-    workerUrl = URL.createObjectURL(workerBlob);
+    // Fetch worker script into a blob URL to avoid hosted-site CORS edge cases.
+    workerUrl = await fetchGifWorkerBlobUrl();
 
     const gif = new GIF({
       workers: 2,
@@ -2642,7 +2801,7 @@ async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, frameD
         tempCamera,
         { x: 0, y: 0, width: targetWidth, height: targetHeight },
         stageValue,
-        1
+        labelScale
       );
 
       gif.addFrame(ctx, { copy: true, delay: frameDelayMs });
@@ -2659,21 +2818,20 @@ async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, frameD
     state.animatedStage = savedAnimatedStage;
     updateScene();
 
-    // Wait for GIF to finish encoding
-    const blob = await new Promise((resolve) => {
-      gif.on("finished", (blob) => resolve(blob));
-      gif.render();
-    });
+    // Wait for GIF to finish encoding with a timeout safeguard.
+    exportDialogExport.textContent = "Encoding GIF...";
+    const encodeTimeoutMs = Math.max(15000, Math.min(180000, frameCount * frameDelayMs * 4));
+    const blob = await renderGifWithTimeout(gif, encodeTimeoutMs);
 
     // Download the GIF
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `creative-process-${timestampForFilename()}.gif`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    triggerDownloadUrl(url, `creative-process-${timestampForFilename()}.gif`);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    exportSucceeded = true;
+  } catch (error) {
+    console.error("Animated GIF export failed", error);
+    const message = error instanceof Error ? error.message : "unknown error";
+    alert(`Animated GIF export failed: ${message}`);
   } finally {
     renderer.setPixelRatio(previousPixelRatio);
     renderer.setSize(previousSize.x, previousSize.y, false);
@@ -2688,7 +2846,9 @@ async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, frameD
     if (workerUrl) {
       URL.revokeObjectURL(workerUrl);
     }
-    setExportDialogOpen(false);
+    if (exportSucceeded) {
+      setExportDialogOpen(false);
+    }
   }
 }
 
