@@ -1583,11 +1583,17 @@
             <div class="gif-dialog-row">
               <div class="gif-dialog-field">
                 <label for="exportFrameCount">Number of frames</label>
-                <input id="exportFrameCount" type="number" min="2" max="240" value="32" step="1" />
+                <input id="exportFrameCount" type="number" min="2" max="2000" value="72" step="1" />
               </div>
               <div class="gif-dialog-field">
-                <label for="exportFrameDelay">Delay per frame (ms)</label>
-                <input id="exportFrameDelay" type="number" min="20" max="2000" value="80" step="10" />
+                <label for="exportFps">Frames per second (FPS)</label>
+                <input id="exportFps" type="number" min="1" max="120" value="24" step="1" />
+              </div>
+            </div>
+            <div class="gif-dialog-row">
+              <div class="gif-dialog-field">
+                <label for="exportHoldFrames">Hold frames at each dot (optional)</label>
+                <input id="exportHoldFrames" type="number" min="0" max="240" value="0" step="1" />
               </div>
             </div>
           </div>

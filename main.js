@@ -15,7 +15,8 @@ const exportScaleInput = document.querySelector("#exportScale");
 const exportScaleValue = document.querySelector("#exportScaleValue");
 const exportGifOptions = document.querySelector("#exportGifOptions");
 const exportFrameCountInput = document.querySelector("#exportFrameCount");
-const exportFrameDelayInput = document.querySelector("#exportFrameDelay");
+const exportFpsInput = document.querySelector("#exportFps");
+const exportHoldFramesInput = document.querySelector("#exportHoldFrames");
 const exportDialogCancel = document.querySelector("#exportDialogCancel");
 const exportDialogExport = document.querySelector("#exportDialogExport");
 const settingsBtn = document.querySelector("#settingsBtn");
@@ -469,6 +470,7 @@ let axisMeshes = [];
 let stageButtons = [];
 let activeGridCameraCell = 0;
 let gridCellViews = [];
+let isExportInProgress = false;
 
 function createGridViewFromCurrentCamera() {
   return {
@@ -2483,6 +2485,11 @@ function updateSceneWrapHeightForGridMode() {
 }
 
 function animate() {
+  if (isExportInProgress) {
+    requestAnimationFrame(animate);
+    return;
+  }
+
   state.animatedStage = THREE.MathUtils.damp(state.animatedStage, state.targetStage, 6, 1 / 60);
   updateScene();
   controls.update();
@@ -2649,6 +2656,7 @@ function downloadHiResPng(targetWidth, targetHeight) {
   renderer.getSize(previousSize);
   const previousPixelRatio = renderer.getPixelRatio();
   downloadPngBtn.disabled = true;
+  isExportInProgress = true;
 
   try {
     renderer.setPixelRatio(1);
@@ -2681,6 +2689,7 @@ function downloadHiResPng(targetWidth, targetHeight) {
     downloadPngBtn.disabled = false;
     exportDialogExport.disabled = false;
     exportDialogCancel.disabled = false;
+    isExportInProgress = false;
     setExportDialogOpen(false);
   }
 }
@@ -2694,6 +2703,7 @@ function downloadGridPng(targetWidth, targetHeight) {
   const previousPixelRatio = renderer.getPixelRatio();
 
   downloadPngBtn.disabled = true;
+  isExportInProgress = true;
 
   try {
     renderer.setPixelRatio(1);
@@ -2768,13 +2778,18 @@ function downloadGridPng(targetWidth, targetHeight) {
     downloadPngBtn.disabled = false;
     exportDialogExport.disabled = false;
     exportDialogCancel.disabled = false;
+    isExportInProgress = false;
     setExportDialogOpen(false);
   }
 }
 
-async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, frameDelayMs) {
+async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, fps, holdFrames) {
   targetWidth = Math.max(1, Math.round(targetWidth));
   targetHeight = Math.max(1, Math.round(targetHeight));
+  frameCount = Math.max(2, Math.round(frameCount));
+  fps = Math.max(1, Math.round(fps));
+  holdFrames = Math.max(0, Math.round(holdFrames));
+  const frameDelayMs = Math.max(1, Math.round(1000 / fps));
 
   const previousSize = new THREE.Vector2();
   renderer.getSize(previousSize);
@@ -2783,6 +2798,7 @@ async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, frameD
 
   downloadGifBtn.disabled = true;
   downloadPngBtn.disabled = true;
+  isExportInProgress = true;
 
   let workerUrl = null;
   let exportSucceeded = false;
@@ -2790,10 +2806,13 @@ async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, frameD
   try {
     renderer.setPixelRatio(1);
     renderer.setSize(targetWidth, targetHeight, false);
+    renderer.setScissorTest(false);
+    renderer.setViewport(0, 0, targetWidth, targetHeight);
     const tempCamera = createRenderCameraForAspect(targetWidth / targetHeight);
 
     const savedTargetStage = state.targetStage;
     const savedAnimatedStage = state.animatedStage;
+    const savedTransitionFromStage = state.transitionFromStage;
 
     // Build a canvas to capture each frame
     const offscreen = document.createElement("canvas");
@@ -2813,11 +2832,40 @@ async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, frameD
     });
 
     const stageCount = state.stageCount;
-
+    const sampleStageValues = [];
     for (let i = 0; i < frameCount; i += 1) {
-      // Map frame index to a fractional stage value (1..stageCount)
       const t = frameCount > 1 ? i / (frameCount - 1) : 0;
-      const stageValue = 1 + t * (stageCount - 1);
+      sampleStageValues.push(1 + t * (stageCount - 1));
+    }
+
+    const holdMap = new Map();
+    if (holdFrames > 0 && stageCount >= 1) {
+      for (let stage = 1; stage <= stageCount; stage += 1) {
+        const holdIdx = stageCount === 1
+          ? 0
+          : Math.round(((stage - 1) / (stageCount - 1)) * (frameCount - 1));
+        if (!holdMap.has(holdIdx)) {
+          holdMap.set(holdIdx, []);
+        }
+        holdMap.get(holdIdx).push(stage);
+      }
+    }
+
+    const renderStageValues = [];
+    for (let i = 0; i < sampleStageValues.length; i += 1) {
+      renderStageValues.push(sampleStageValues[i]);
+      const holdsForIndex = holdMap.get(i) || [];
+      for (const heldStage of holdsForIndex) {
+        for (let h = 0; h < holdFrames; h += 1) {
+          renderStageValues.push(heldStage);
+        }
+      }
+    }
+
+    const totalRenderFrames = renderStageValues.length;
+
+    for (let i = 0; i < totalRenderFrames; i += 1) {
+      const stageValue = renderStageValues[i];
 
       // Keep GIF frame animation directionally consistent with live forward transitions.
       state.transitionFromStage = THREE.MathUtils.clamp(Math.floor(stageValue), 1, stageCount);
@@ -2839,8 +2887,8 @@ async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, frameD
       gif.addFrame(ctx, { copy: true, delay: frameDelayMs });
 
       // Update button text to show progress
-      if ((i + 1) % 4 === 0 || i === frameCount - 1) {
-        exportDialogExport.textContent = `Rendering... ${i + 1}/${frameCount}`;
+      if ((i + 1) % 4 === 0 || i === totalRenderFrames - 1) {
+        exportDialogExport.textContent = `Rendering... ${i + 1}/${totalRenderFrames}`;
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
     }
@@ -2848,11 +2896,13 @@ async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, frameD
     // Restore state
     state.targetStage = savedTargetStage;
     state.animatedStage = savedAnimatedStage;
+    state.transitionFromStage = savedTransitionFromStage;
     updateScene();
 
     // Wait for GIF to finish encoding with a timeout safeguard.
     exportDialogExport.textContent = "Encoding GIF...";
-    const encodeTimeoutMs = Math.max(15000, Math.min(180000, frameCount * frameDelayMs * 4));
+    // Encoding cost scales mostly with frame count and resolution, not playback FPS.
+    const encodeTimeoutMs = Math.max(30000, Math.min(300000, totalRenderFrames * 1200));
     const blob = await renderGifWithTimeout(gif, encodeTimeoutMs);
 
     // Download the GIF
@@ -2875,6 +2925,7 @@ async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, frameD
     exportDialogExport.disabled = false;
     exportDialogCancel.disabled = false;
     exportDialogExport.textContent = exportMode === "gif" ? "Export GIF" : "Export PNG";
+    isExportInProgress = false;
     if (workerUrl) {
       URL.revokeObjectURL(workerUrl);
     }
@@ -2924,8 +2975,9 @@ function setExportDialogOpen(isOpen, mode = "png") {
       exportDialogDesc.textContent = "Cycles through each stage on the single view.";
       exportGifOptions.hidden = false;
       exportDialogExport.textContent = "Export GIF";
-      exportFrameCountInput.value = String(Math.max(2, state.stageCount * 8));
-      exportFrameDelayInput.value = "80";
+      exportFrameCountInput.value = "72";
+      exportFpsInput.value = "24";
+      exportHoldFramesInput.value = "0";
     } else {
       exportDialogTitle.textContent = "Export PNG";
       exportDialogDesc.textContent = "Downloads a high-resolution PNG of the current view.";
@@ -2980,13 +3032,15 @@ function bindControls() {
     exportHeightInput.value = String(targetHeight);
 
     if (exportMode === "gif") {
-      const frameCount = Math.max(2, Math.min(240, Math.trunc(Number(exportFrameCountInput.value) || 32)));
-      const frameDelay = Math.max(20, Math.min(2000, Math.trunc(Number(exportFrameDelayInput.value) || 80)));
+      const frameCount = Math.max(2, Math.min(2000, Math.trunc(Number(exportFrameCountInput.value) || 72)));
+      const fps = Math.max(1, Math.min(120, Math.trunc(Number(exportFpsInput.value) || 24)));
+      const holdFrames = Math.max(0, Math.min(240, Math.trunc(Number(exportHoldFramesInput.value) || 0)));
       exportFrameCountInput.value = String(frameCount);
-      exportFrameDelayInput.value = String(frameDelay);
+      exportFpsInput.value = String(fps);
+      exportHoldFramesInput.value = String(holdFrames);
       exportDialogExport.disabled = true;
       exportDialogCancel.disabled = true;
-      downloadAnimatedGif(targetWidth, targetHeight, frameCount, frameDelay);
+      downloadAnimatedGif(targetWidth, targetHeight, frameCount, fps, holdFrames);
     } else {
       exportDialogExport.disabled = true;
       exportDialogCancel.disabled = true;
