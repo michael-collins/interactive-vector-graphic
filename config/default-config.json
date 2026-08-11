@@ -86,10 +86,10 @@
     }
   },
   "labels": {
-    "showDotLabels": true,
-    "showOriginLabel": true,
+    "showDotLabels": false,
+    "showOriginLabel": false,
     "originText": "Initial idea",
-    "showVectorEndLabel": true,
+    "showVectorEndLabel": false,
     "vectorEndTextMode": "stage",
     "vectorEndText": "",
     "showInitialVectorEndLabel": false,
@@ -134,7 +134,7 @@
     "density": 0.055
   },
   "display": {
-    "mode": "grid",
+    "mode": "single",
     "gridAspectRatio": "16:9",
     "gridSyncCellCameras": true,
     "gridSyncCellPosition": false,
@@ -230,9 +230,9 @@
     "fov": 44,
     "zoom": 3.4,
     "position": {
-      "x": 8.26180594393601,
-      "y": 4.155862014023832,
-      "z": 6.823329718825077
+      "x": 8.556665989758296,
+      "y": 3.4618742949254897,
+      "z": 7.0736732762415375
     }
   }
 }
