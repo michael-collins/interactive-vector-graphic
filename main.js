@@ -1612,7 +1612,8 @@ function updateScene() {
   const connectorPoints = [origin, ...landedPathPoints];
 
   const lastLandedPoint = landedPathPoints[landedPathPoints.length - 1] ?? origin;
-  const appendCurrentTail = currentPoint.distanceToSquared(lastLandedPoint) > 1e-8;
+  // Avoid tiny floating-point tail segments at landed/held stages that can look like jitter.
+  const appendCurrentTail = currentPoint.distanceToSquared(lastLandedPoint) > 1e-6;
   if (appendCurrentTail) {
     connectorPoints.push(currentPoint);
   }
@@ -1734,7 +1735,8 @@ function updateScene() {
 
     const isBaseConeVisible = stage <= coneBaseVisibleStage;
     const isDepartingConeVisible = showDeparting && stage === departingStage;
-    cone.visible = state.showConeHistory && (isBaseConeVisible || isDepartingConeVisible);
+    const isAnimatedConeVisible = shouldAnimateCone && stage === animatedConeStage;
+    cone.visible = state.showConeHistory && (isBaseConeVisible || isDepartingConeVisible || isAnimatedConeVisible);
     cone.position.copy(coneApexes[i]);
     cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), coneDirs[i]);
     cone.material.color.copy(state.coneColor);
@@ -2899,7 +2901,8 @@ async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, fps, h
       updateScene();
       renderer.render(scene, tempCamera);
 
-      ctx.clearRect(0, 0, targetWidth, targetHeight);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, targetWidth, targetHeight);
       ctx.drawImage(renderer.domElement, 0, 0);
       drawPointLabels(
         ctx,
@@ -3061,7 +3064,8 @@ async function downloadAnimatedWebp(targetWidth, targetHeight, frameCount, fps, 
       updateScene();
       renderer.render(scene, tempCamera);
 
-      ctx.clearRect(0, 0, targetWidth, targetHeight);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, targetWidth, targetHeight);
       ctx.drawImage(renderer.domElement, 0, 0);
       drawPointLabels(
         ctx,
