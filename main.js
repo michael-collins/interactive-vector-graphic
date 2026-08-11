@@ -1424,27 +1424,38 @@ function updateScene() {
   const coneBaseVisibleStage = isForward
     ? maxVisibleStage
     : state.targetStage;
+  const forwardLandedStage = THREE.MathUtils.clamp(
+    Math.floor(state.animatedStage),
+    1,
+    Math.max(1, state.targetStage - 1)
+  );
   // Keep the departing stage visible while stepping backward so it can animate out.
   const showDeparting = !isForward
     && backwardStepCount > 0
     && departingStage > coneBaseVisibleStage
     && state.animatedStage > departingStage - 1;
-  const animatedConeStage = isForward ? Math.ceil(state.animatedStage) : (showDeparting ? departingStage : coneBaseVisibleStage);
   const coneAnimMix = state.animatedStage - Math.floor(state.animatedStage);
-  const shouldAnimateCone = isForward || showDeparting;
+
+  let coneAnimFromIdx = 0;
+  let coneAnimToIdx = 0;
+  if (isForward) {
+    coneAnimFromIdx = Math.max(0, forwardLandedStage - 1);
+    coneAnimToIdx = Math.min(state.stageCount - 1, coneAnimFromIdx + 1);
+  } else if (showDeparting) {
+    coneAnimFromIdx = Math.max(0, departingStage - 1);
+    coneAnimToIdx = Math.max(0, coneAnimFromIdx - 1);
+  }
+
+  const animatedConeStage = isForward
+    ? coneAnimToIdx + 1
+    : (showDeparting ? departingStage : coneBaseVisibleStage);
+  const shouldAnimateCone = (isForward || showDeparting) && coneAnimFromIdx !== coneAnimToIdx;
   const forwardSegmentProgress = THREE.MathUtils.clamp(coneAnimMix, 0, 1);
   const backwardSegmentProgress = THREE.MathUtils.clamp(departingStage - state.animatedStage, 0, 1);
   const forwardT = THREE.MathUtils.smoothstep(forwardSegmentProgress, 0, 1);
   const backwardT = THREE.MathUtils.smoothstep(backwardSegmentProgress, 0, 1);
   const animatedConeProgress = shouldAnimateCone ? (isForward ? forwardT : backwardT) : 1;
   const stagePoints = stageRadii.map((r, i) => new THREE.Vector3().copy(dirs[i]).multiplyScalar(r));
-  const forwardLandedStage = isForward
-    ? THREE.MathUtils.clamp(
-      Math.floor(state.animatedStage),
-      1,
-      Math.max(1, state.targetStage - 1)
-    )
-    : null;
 
   const getSphereRevealProgress = (stage) => {
     if (isForward) {
@@ -1614,11 +1625,10 @@ function updateScene() {
     fromDot && i > 0 ? pt.distanceTo(coneApexes[i]) : stageRadii[i]
   );
 
-  const animatedConeIdx = Math.max(0, animatedConeStage - 1);
   let animatedConeState = null;
-  if (shouldAnimateCone && animatedConeStage > 1) {
-    const fromIdx = isForward ? Math.max(0, animatedConeIdx - 1) : animatedConeIdx;
-    const toIdx = isForward ? animatedConeIdx : Math.max(0, animatedConeIdx - 1);
+  if (shouldAnimateCone) {
+    const fromIdx = coneAnimFromIdx;
+    const toIdx = coneAnimToIdx;
     const p = animatedConeProgress;
     const dir = new THREE.Vector3().copy(coneDirs[fromIdx]).lerp(coneDirs[toIdx], p).normalize();
     const apex = new THREE.Vector3().copy(coneApexes[fromIdx]).lerp(coneApexes[toIdx], p);
@@ -2809,7 +2819,9 @@ async function downloadAnimatedGif(targetWidth, targetHeight, frameCount, frameD
       const t = frameCount > 1 ? i / (frameCount - 1) : 0;
       const stageValue = 1 + t * (stageCount - 1);
 
-      state.targetStage = THREE.MathUtils.clamp(Math.round(stageValue), 1, stageCount);
+      // Keep GIF frame animation directionally consistent with live forward transitions.
+      state.transitionFromStage = THREE.MathUtils.clamp(Math.floor(stageValue), 1, stageCount);
+      state.targetStage = THREE.MathUtils.clamp(Math.ceil(stageValue), 1, stageCount);
       state.animatedStage = stageValue;
       updateScene();
       renderer.render(scene, tempCamera);
