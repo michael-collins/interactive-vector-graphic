@@ -1755,7 +1755,17 @@ function updateScene() {
       cone.material.opacity = THREE.MathUtils.lerp(fromOpacity, toOpacity, animatedConeState.progress);
     } else {
       cone.scale.set(coneRadius, visualConeHeight, coneRadius);
-      cone.material.opacity = stage === state.targetStage ? state.coneActiveOpacity : state.coneInactiveOpacity;
+      const sourceTransitionStage = coneAnimFromIdx + 1;
+      if (isForward && shouldAnimateCone && stage === sourceTransitionStage) {
+        // Fade the source cone out smoothly as the incoming cone fades in.
+        cone.material.opacity = THREE.MathUtils.lerp(
+          state.coneActiveOpacity,
+          state.coneInactiveOpacity,
+          animatedConeProgress
+        );
+      } else {
+        cone.material.opacity = stage === state.targetStage ? state.coneActiveOpacity : state.coneInactiveOpacity;
+      }
     }
   });
 }
